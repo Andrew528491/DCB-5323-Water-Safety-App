@@ -23,7 +23,7 @@ class HomeScreen extends StatelessWidget {
                         const SizedBox(height: 24),
                         FilledButton.icon(
                             onPressed: () async {
-                                await AuthService.instance.signOut(),
+                                await AuthService.instance.signOut();
                             },
                             icon: const Icon(Icons.logout),
                             label: const Text('Sign out'),

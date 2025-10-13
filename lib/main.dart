@@ -55,7 +55,6 @@ class MyApp extends StatelessWidget {
   }
 }
 
-/*
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
 
@@ -73,7 +72,6 @@ class MyHomePage extends StatefulWidget {
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
-*/
 
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
@@ -83,7 +81,7 @@ class AuthGate extends StatelessWidget {
     return StreamBuilder(
       stream: AuthService.instance.authStateChanges,
       builder: (context, snapshot) {
-        if (snapshot.conectionState == ConnectionState.waiting) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
@@ -96,8 +94,6 @@ class AuthGate extends StatelessWidget {
     );
   }
 }
-
-/*
 
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;

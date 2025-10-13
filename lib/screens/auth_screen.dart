@@ -73,7 +73,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 child: Center(
                     child: SingleChildScrollView(
                         padding: const EdgeInsets.all(24),
-                        child: ConstainedBox(
+                        child: ConstrainedBox(
                             constraints: const BoxConstraints(maxWidth: 420),
                             child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -102,7 +102,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                             ButtonSegment(value: true, label: Text('Log In')),
                                             ButtonSegment(value: false, label: Text('Sign Up')),
                                         ],
-                                        selected: {_isLogn},
+                                        selected: {_isLogin},
                                         onSelectionChanged: (v) => setState(() => _isLogin = v.first),
                                     ),
                                     const SizedBox(height: 16),
@@ -118,12 +118,12 @@ class _AuthScreenState extends State<AuthScreen> {
                                                     keyboardType: TextInputType.emailAddress,
                                                     decoration: const InputDecoration(
                                                         labelText: 'Email',
-                                                        prefixIcon: Icon(Icons.email_outLined),
+                                                        prefixIcon: Icon(Icons.email_outlined),
                                                     ),
                                                     validator: (v) {
                                                         if (v == null || v.isEmpty) return 'Email required';
                                                         if (!RegExp(r'^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$')
-                                                            .hasMAtch(v)) {
+                                                            .hasMatch(v)) {
                                                             return 'Enter a valid email';
                                                         }
                                                         return null;
@@ -169,7 +169,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                     const SizedBox(height: 16),
 
                                     // divider
-                                    Rox(
+                                    Row(
                                         children: const [
                                             Expanded(child: Divider()),
                                             Padding(
@@ -182,7 +182,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                     const SizedBox(height: 16),
 
                                     //Google SignIn Button
-                                    GoogleSignInButton(onPressed: _working ? () {} _google),
+                                    GoogleSignInButton(onPressed: _working ? () {} : _google),
 
                                     const SizedBox(height: 12),
                                 ],

@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "763725513957",
+    "project_id": "dcb-5323-water-safety-capstone",
+    "storage_bucket": "dcb-5323-water-safety-capstone.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:763725513957:android:376879cba6fcf6d000c00c",
+        "android_client_info": {
+          "package_name": "com.example.water_safety_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "763725513957-ehnnlm442dja74r380ar13g0b6lppsoh.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCYivkP6TsDGMfQEgFP91nF0wY7eYGFMoY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "763725513957-ehnnlm442dja74r380ar13g0b6lppsoh.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "763725513957-i3sa3v7ldkj7dmonb05vq7m3cdh46ant.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.waterSafetyApp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

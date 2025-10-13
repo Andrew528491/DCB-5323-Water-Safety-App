@@ -16,8 +16,8 @@ class GoogleSignInButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
           ),
         ),
-        icon: Image.network(
-          'https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg',
+        icon: Image.asset(
+          'assets/images/GoogleLogo.webp',
           height: 20,
         ),
         label: const Text(

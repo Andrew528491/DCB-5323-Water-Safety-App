@@ -11,7 +11,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   
-  // --- PLACEHOLDER DATA (Easily modify these) ---
+  // --- PLACEHOLDER DATA ---
   final String _userName = "TestName";
   
   String? _lessonInProgressId = "lesson_1"; 
@@ -60,6 +60,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return _dailyMessages[random.nextInt(_dailyMessages.length)];
   }
 
+  // TODO: Add more context phrases?
   String _selectContextualTitleSubText() {
     if (_lessonInProgressId != null) {
       return "$_lessonTitle is in progress. Click continue to finish it out!";

@@ -50,15 +50,15 @@ class _NavigationScreenState extends State<NavigationScreen> {
         children: [
           WaterTransitionWrapper(
             contentKey: _contentKey,
-            child: _widgetOptions.elementAt((_contentKey as ValueKey<int>).value),
             onTransitionComplete: _updateSelectedIndex,
+            child: _widgetOptions.elementAt((_contentKey as ValueKey<int>).value),
           ),
 
           Positioned(
             left: 0,
             right: 0,
             bottom: 0,
-            child: Container(
+            child: SizedBox(
               height: 150, 
               
               child: ClipPath(

@@ -14,7 +14,7 @@ class LessonsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Top title. Feel free to change, this might be temporary
+      // Top title. Feel free to change, this is temporary
       appBar: AppBar(
         title: const Text('Water Safety Lessons'),
         backgroundColor: Theme.of(context).colorScheme.primary,

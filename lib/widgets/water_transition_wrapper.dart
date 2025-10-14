@@ -28,7 +28,6 @@ class _WaterTransitionWrapperState extends State<WaterTransitionWrapper>
   late Animation<double> _waveAnimation;
 
   Widget? _oldChild;
-  bool _shouldAnimate = false;
 
   @override
   void initState() {
@@ -62,13 +61,11 @@ class _WaterTransitionWrapperState extends State<WaterTransitionWrapper>
     
     if (widget.contentKey != oldWidget.contentKey) {
       _oldChild = oldWidget.child;
-      _shouldAnimate = true;
       
       _riseFallController.reset();
       _riseFallController.forward().then((_) {
         setState(() {
           _oldChild = null;
-          _shouldAnimate = false;
         });
         widget.onTransitionComplete();
         _riseFallController.reverse();

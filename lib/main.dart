@@ -46,8 +46,7 @@ class MyApp extends StatelessWidget {
 
       // 
 
-      // home: const AuthGate(),
-      home: const NavigationScreen(),
+      home: const AuthGate(),
     );
   }
 }

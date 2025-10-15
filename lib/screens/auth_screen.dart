@@ -90,8 +90,8 @@ class _AuthScreenState extends State<AuthScreen> {
                                     const SizedBox(height: 8),
                                     Text(
                                         _isLogin
-                                            ? 'Welcome back! Log in to continue your lesson.'
-                                            : 'Create an account ####.',
+                                            ? 'Welcome back! Log in to continue your water safety education.'
+                                            : 'Create a new account',
                                         textAlign: TextAlign.center,
                                     ),
                                     const SizedBox(height: 24),
@@ -110,61 +110,65 @@ class _AuthScreenState extends State<AuthScreen> {
 
                                     // email/password form
                                     Form(
-                                        key: _formKey,
-                                        child: Column(
-                                            children: [
-                                                TextFormField(
-                                                    controller: _emailController,
-                                                    keyboardType: TextInputType.emailAddress,
-                                                    decoration: const InputDecoration(
-                                                        labelText: 'Email',
-                                                        prefixIcon: Icon(Icons.email_outlined),
-                                                    ),
-                                                    validator: (v) {
-                                                        if (v == null || v.isEmpty) return 'Email required';
-                                                        if (!RegExp(r'^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$')
-                                                            .hasMatch(v)) {
-                                                            return 'Enter a valid email';
-                                                        }
-                                                        return null;
-                                                    },
-                                                ),
-                                                const SizedBox(height: 12),
-                                                TextFormField(
-                                                    controller: _passwordController,
-                                                    obscureText: _obscure,
-                                                    decoration: InputDecoration(
-                                                        labelText: 'Password',
-                                                        prefixIcon: const Icon(Icons.lock_outline),
-                                                        suffixIcon: IconButton(
-                                                            icon: Icon(_obscure
-                                                                ? Icons.visibility
-                                                                : Icons.visibility_off),
-                                                            onPressed: () =>
-                                                                setState(() => _obscure = !_obscure),
-                                                        ),
-                                                    ),
-                                                    validator: (v) {
-                                                        if (v == null || v.length < 6) {
-                                                            return 'Minimum of 6 characters';
-                                                        }
-                                                        return null;
-                                                    },
-                                                ),
-                                                const SizedBox(height: 16),
-                                                SizedBox(
-                                                    width: double.infinity,
-                                                    child: FilledButton(
-                                                        onPressed: _working ? null : _submit,
-                                                        child: Padding(
-                                                            padding:
-                                                                const EdgeInsets.symmetric(vertical: 14.0),
-                                                            child: Text(_isLogin ? 'Log in' : 'Create account'),
-                                                        ),
-                                                    ),
-                                                ),
-                                            ],
-                                        ),
+                                      key: _formKey,
+                                      child: Column(
+                                        children: [
+                                          TextFormField(
+                                            controller: _emailController,
+                                            keyboardType: TextInputType.emailAddress,
+                                            decoration: const InputDecoration(
+                                              labelText: 'Email',
+                                              prefixIcon: Icon(Icons.email_outlined),
+                                            ),
+                                            validator: (v) {
+                                              if (v == null || v.isEmpty) {
+                                                return 'Email required';
+                                              }
+                                              final emailRegex = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
+                                              if (!emailRegex.hasMatch(v.trim())) {
+                                                return 'Enter a valid email address';
+                                              }
+                                              return null;
+                                            },
+                                          ),
+                                          const SizedBox(height: 12),
+                                          TextFormField(
+                                            controller: _passwordController,
+                                            obscureText: _obscure,
+                                            decoration: InputDecoration(
+                                              labelText: 'Password',
+                                              prefixIcon: const Icon(Icons.lock_outline),
+                                              suffixIcon: IconButton(
+                                                icon: Icon(_obscure ? Icons.visibility : Icons.visibility_off),
+                                                onPressed: () => setState(() => _obscure = !_obscure),
+                                              ),
+                                            ),
+                                            validator: (v) {
+                                              if (v == null || v.isEmpty) {
+                                                return 'Password required';
+                                              }
+                                              if (v.length < 8) {
+                                                return 'Password must be at least 8 characters';
+                                              }
+                                              if (!RegExp(r'^(?=.*[A-Za-z])(?=.*\d)').hasMatch(v)) {
+                                                return 'Include at least one letter and one number';
+                                              }
+                                              return null;
+                                            },
+                                          ),
+                                          const SizedBox(height: 16),
+                                          SizedBox(
+                                            width: double.infinity,
+                                            child: FilledButton(
+                                              onPressed: _working ? null : _submit,
+                                              child: Padding(
+                                                padding: const EdgeInsets.symmetric(vertical: 14.0),
+                                                child: Text(_isLogin ? 'Log in' : 'Create account'),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                     const SizedBox(height: 16),
 

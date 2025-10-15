@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'water_clipper.dart';
+import 'water_transition_clipper.dart';
 import 'dart:math' as math;
 
 class WaterTransitionWrapper extends StatefulWidget {

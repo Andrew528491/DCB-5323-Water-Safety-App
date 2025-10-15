@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:water_safety_app/widgets/homescreen_header_clipper.dart';
 import 'dart:math';
-import '../widgets/wave_clipper.dart';
+import '../widgets/water_transition_clipper.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

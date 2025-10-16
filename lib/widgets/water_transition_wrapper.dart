@@ -45,7 +45,7 @@ class _WaterTransitionWrapperState extends State<WaterTransitionWrapper>
     // Controls wave movement
     _waveController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 4), // Speed of the full animation
+      duration: const Duration(milliseconds: 100),
     )..repeat(); 
 
     _waveAnimation = Tween<double>(begin: 0.0, end: 2 * math.pi).animate(_waveController);

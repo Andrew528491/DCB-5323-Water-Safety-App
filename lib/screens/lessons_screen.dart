@@ -1,45 +1,63 @@
 import 'package:flutter/material.dart';
+import 'lesson_content_screen.dart';
+import 'package:water_safety_app/widgets/water_transition_wrapper.dart';
 
-class LessonsScreen extends StatelessWidget {
+class LessonsScreen extends StatefulWidget {
   const LessonsScreen({super.key});
 
-  // Placeholder text for the lesson modules
-  final List<Map<String, String>> lessons = const [
-    {'title': 'Module 1: Insert Text', 'subtitle': 'Insert sub text'},
-    {'title': 'Module 2: Insert Text', 'subtitle': 'Insert sub text'},
-    {'title': 'Module 3: Insert Text', 'subtitle': 'Insert sub text'},
-    {'title': 'Module 4: Insert Text', 'subtitle': 'Insert sub text'},
-  ];
+  @override
+  State<LessonsScreen> createState() => _LessonsScreenState();
+}
 
+class _LessonsScreenState extends State<LessonsScreen> {
+  int _selectedLessonIndex = 0;
+  Key _contentKey = const ValueKey(0);
+
+  final List<String> lessonTitles = ["Lesson 1", "Lesson 2", "Lesson 3"];
+
+  void _openLesson(int index) {
+    setState(() {
+      _selectedLessonIndex = index;
+      _contentKey = const ValueKey(1);
+    });
+  }
+
+  void _goBack() {
+    setState(() {
+      _contentKey = const ValueKey(0);
+    });
+  }
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Top title. Feel free to change, this is temporary
       appBar: AppBar(
-        title: const Text('Water Safety Lessons'),
+        title: const Text('Lessons'),
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Colors.white,
       ),
-
-      // Lesson list. Pretty basic right now.
-      body: ListView.builder(
-        itemCount: lessons.length,
-        itemBuilder: (context, index) {
-          final lesson = lessons[index];
-          return Card(
-            margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            child: ListTile(
-              title: Text(lesson['title']!),
-              subtitle: Text(lesson['subtitle']!),
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Starting ${lesson['title']}...')),
-                );
-              },
-            ),
-          );
-        },
+      body: WaterTransitionWrapper(
+        contentKey: _contentKey,
+        onTransitionComplete: () {}, // optional
+        child: (_contentKey == const ValueKey(0))
+            ? _buildLessonList()
+            : LessonContentScreen(
+                lessonId: _selectedLessonIndex,
+                onBack: _goBack,
+              ),
       ),
+    );
+  }
+
+    Widget _buildLessonList() {
+    return ListView.builder(
+      itemCount: lessonTitles.length,
+      itemBuilder: (context, index) {
+        return ListTile(
+          title: Text(lessonTitles[index]),
+          onTap: () => _openLesson(index),
+        );
+      },
     );
   }
 }

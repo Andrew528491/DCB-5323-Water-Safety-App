@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -55,26 +57,22 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Future<void> _saveProfile() async {
-    print('DEBUG: Save button pressed');
     setState(() => _isSaving = true);
 
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      print('ERROR: currentUser is null!');
       setState(() => _isSaving = false);
       return;
     }
 
     final username = _nameController.text.trim();
-    print('DEBUG: Attempting to save username "$username" for UID ${user.uid}');
 
     try {
       await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
         'username': username,
       }, SetOptions(merge: true));
-      print('DEBUG: Firestore write succeeded.');
     } catch (e) {
-      print('ERROR: Firestore write failed: $e');
+      log('ERROR: Firestore write failed: $e');
     }
 
     setState(() => _isSaving = false);

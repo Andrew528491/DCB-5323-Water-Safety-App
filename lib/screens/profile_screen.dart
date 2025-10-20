@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -77,40 +78,72 @@ Future<void> _loadUserProfile() async {
     }
   }
 
-  // --Delete account + data
-  Future<void> _deleteAccount() async {
-    final confirm = await showDialog(
-      context: context, 
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Account'),
-        content: const Text(
-          'Are you sure want to premanently delete your account and all assciated data? '
-          'This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
-          ),
-        ],
+ Future<void> _deleteAccount() async {
+  final confirm = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Delete Account'),
+      content: const Text(
+        'Are you sure you want to permanently delete your account and all associated data? '
+        'This action cannot be undone.',
       ),
-    );
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+          onPressed: () => Navigator.pop(context, true),
+          child: const Text('Delete'),
+        ),
+      ],
+    ),
+  );
 
-    if (confirm == true) {
-      // TODO: Delete user data Firebase
-      await AuthService.instance.signOut();
+  if (confirm == true) {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+
+      if (user != null) {
+        final userId = user.uid;
+
+        // 🗑 Delete Firestore user document first
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .delete();
+
+        // 🧹 Delete the Firebase Auth user account
+        await user.delete();
+
+        // 🚪 Sign out after deletion (precaution)
+        await AuthService.instance.signOut();
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Account deleted')),
         );
+        Navigator.of(context).popUntil((route) => route.isFirst); // go back to home/login
+      }
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'requires-recent-login') {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Please sign in again before deleting your account for security reasons.',
+              ),
+            ),
+          );
+        }
+      } else {
+        rethrow;
       }
     }
   }
+}
 
   @override
   Widget build(BuildContext context) {

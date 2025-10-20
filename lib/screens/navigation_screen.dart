@@ -16,31 +16,48 @@ class NavigationScreen extends StatefulWidget {
 class _NavigationScreenState extends State<NavigationScreen> {
   
   Key _contentKey = const ValueKey(0); 
-
   int _selectedIndex = 0; 
+  late List<Widget> _widgetOptions; 
+  
+  final String _nextLessonTitle = LessonsScreen.findNextUncompletedLessonTitle();
+  final IconData _nextLessonIcon = LessonsScreen.findNextUncompletedLessonIcon(); 
 
-  // Navigation bar options
-  static final List<Widget> _widgetOptions = <Widget>[
-    const HomeScreen(), 
-    const LessonsScreen(),
-    const GameScreen(),
-    const ProfileScreen(),
-  ];
-
-  // updates the current index for the navigation bar. Called by the wrapper after the animation is played
   void _updateSelectedIndex() {
     setState(() {
       _selectedIndex = (_contentKey as ValueKey<int>).value;
     });
   }
 
-  // retrieves the screen that was selected via the navigation bar
-  void _onItemTapped(int index) {
+  void _setWidgetOptions({bool autoOpenLessons = false}) {
+    _widgetOptions = <Widget>[
+      HomeScreen(
+        onNavigateToLessons: () => _onItemTapped(1, autoOpen: true),
+        nextLessonTitle: _nextLessonTitle, 
+        nextLessonIcon: _nextLessonIcon,
+      ),
+      LessonsScreen(
+        autoOpenNextLesson: autoOpenLessons,
+      ), 
+      const GameScreen(),
+      const ProfileScreen(),
+    ];
+  }
+
+  void _onItemTapped(int index, {bool autoOpen = false}) {
     if (index != _selectedIndex) {
+      
+      _setWidgetOptions(autoOpenLessons: autoOpen && index == 1); 
+
       setState(() {
         _contentKey = ValueKey(index); 
       });
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _setWidgetOptions(); 
   }
 
   @override
@@ -77,7 +94,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
                   ],
                   
                   currentIndex: _selectedIndex, 
-                  onTap: _onItemTapped,
+                  onTap: (index) => _onItemTapped(index),
                 ),
               ),
             ),

@@ -1,9 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:water_safety_app/widgets/homescreen_header_clipper.dart';
+import 'lessons_screen.dart';
 import 'dart:math';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final String nextLessonTitle;
+  final IconData nextLessonIcon; 
+  final VoidCallback onNavigateToLessons; 
+
+  const HomeScreen({
+    super.key,
+    required this.nextLessonTitle,
+    required this.nextLessonIcon, 
+    required this.onNavigateToLessons,
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -16,10 +26,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   
   String? _lessonInProgressId = "lesson_1"; 
   
-  final String _lessonTitle = "TestLesson"; 
-  
   late String _contextualTitleSubText;
-
 
   final List<String> _dailyMessages = const [
     "Always check water depth before diving in.",
@@ -31,6 +38,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   ];
 
   late String _dailyMessage;
+
+  int get _completedCount => LessonsScreen.lessons.where((l) => l["isCompleted"] == true).length;
+  int get _totalCount => LessonsScreen.lessons.length;
+  double get _progressValue => _totalCount > 0 ? _completedCount / _totalCount : 0;
 
   late AnimationController _waveController;
   late Animation<double> _waveAnimation; 
@@ -60,10 +71,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return _dailyMessages[random.nextInt(_dailyMessages.length)];
   }
 
-  // TODO: Add more context phrases?
   String _selectContextualTitleSubText() {
     if (_lessonInProgressId != null) {
-      return "$_lessonTitle is in progress. Click continue to finish it out!";
+      return "${widget.nextLessonTitle} is next up. Click below to continue your learning!";
     }
     else { 
       return "Navigate to lessons or press the start lesson button to begin your learning!";
@@ -226,9 +236,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+          children: [            
             const Text(
-              "🌊 Lesson In Progress",
+              "🌊 Next Lesson",
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -240,16 +250,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () {
-                  // TODO: Implement navigation
+                  widget.onNavigateToLessons();
                 },
-                icon: const Icon(Icons.waves, size: 28), 
+                icon: Icon(widget.nextLessonIcon, size: 28),
                 label: Text(
-                  "Continue: $_lessonTitle",
+                  widget.nextLessonTitle,
                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 15),
-                  backgroundColor: Colors.white, 
+                  backgroundColor: Colors.white,
                   foregroundColor: primaryColor,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -257,6 +267,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   elevation: 0,
                 ),
               ),
+            ),
+            const SizedBox(height: 5,),
+            Text(
+              'Progress: $_completedCount out of $_totalCount lessons completed',
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.white70,
+              ),
+            ),
+            const SizedBox(height: 5,),
+            LinearProgressIndicator(
+              value: _progressValue,
+              backgroundColor: Colors.white30,
+              valueColor: const AlwaysStoppedAnimation<Color>(Colors.lightGreenAccent),
+              minHeight: 8,
+              borderRadius: BorderRadius.circular(4),
             ),
           ],
         ),

@@ -10,6 +10,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   bool isMusicMuted = false;
   bool isSoundMuted = false;
   bool _isSaving = false;
@@ -93,6 +94,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: Colors.white,
         actions: [
+          Text('Save Changes'),
           IconButton(
             onPressed: _isSaving ? null : _saveProfile,
             icon: _isSaving
@@ -141,6 +143,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
               labelText: 'Name',
               border: OutlineInputBorder(),
               prefixIcon: Icon(Icons.person),
+            ),
+            onChanged: (_) => setState(() {}),
+          ),
+
+          const SizedBox(height: 10),
+
+          //email
+          TextField(
+            controller: _emailController,
+            decoration: const InputDecoration(
+              labelText: 'Email',
+              border: OutlineInputBorder(),
+              prefixIcon: Icon(Icons.mail),
             ),
             onChanged: (_) => setState(() {}),
           ),

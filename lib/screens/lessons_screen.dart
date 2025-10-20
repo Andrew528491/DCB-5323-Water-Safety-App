@@ -3,17 +3,105 @@ import 'lesson_content_screen.dart';
 import 'package:water_safety_app/widgets/water_transition_wrapper.dart';
 
 class LessonsScreen extends StatefulWidget {
-  const LessonsScreen({super.key});
+  final bool autoOpenNextLesson;
+
+  const LessonsScreen({
+    super.key,
+    this.autoOpenNextLesson = false,
+  });
 
   @override
   State<LessonsScreen> createState() => _LessonsScreenState();
+
+  static final List<Map<String, dynamic>> lessons = [
+    {
+      "title": "Lesson 1: TestName",
+      "description": "Default description. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+      "isCompleted": true,
+      "icon": Icons.water,
+    },
+    {
+      "title": "Lesson 2: TestName",
+      "description": "Default description. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+      "isCompleted": false,
+      "icon": Icons.health_and_safety,
+    },
+    {
+      "title": "Lesson 3: TestName",
+      "description": "Default description. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+      "isCompleted": false,
+      "icon": Icons.pool,
+    },
+    {
+      "title": "Lesson 4: TestName",
+      "description": "Default description. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+      "isCompleted": false,
+      "icon": Icons.home,
+    },
+    {
+      "title": "Lesson 5: TestName",
+      "description": "Default description. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+      "isCompleted": false,
+      "icon": Icons.bathtub,
+    },
+    {
+      "title": "Lesson 6: TestName",
+      "description": "Default description. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+      "isCompleted": false,
+      "icon": Icons.waves,
+    },
+    {
+      "title": "Lesson 7: TestName",
+      "description": "Default description. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+      "isCompleted": false,
+      "icon": Icons.beach_access,
+    },
+  ];
+
+  static String findNextUncompletedLessonTitle() {
+    for (var lesson in lessons) {
+      if (lesson["isCompleted"] == false) {
+        return lesson["title"] as String;
+      }
+    }
+    return "Start Your Journey"; 
+  }
+
+  static IconData findNextUncompletedLessonIcon() {
+    for (var lesson in lessons) {
+      if (lesson["isCompleted"] == false) {
+        return lesson["icon"] as IconData;
+      }
+    }
+    return Icons.menu_book; 
+  }
+
+  static int findNextUncompletedLessonId() {
+    for (int i = 0; i < lessons.length; i++) {
+      if (lessons[i]["isCompleted"] == false) {
+        return i;
+      }
+    }
+    return -1;
+  }
 }
 
 class _LessonsScreenState extends State<LessonsScreen> {
   int _selectedLessonIndex = 0;
-  Key _contentKey = const ValueKey(0);
+  Key _contentKey = const ValueKey(0); 
 
-  final List<String> lessonTitles = ["Lesson 1", "Lesson 2", "Lesson 3"];
+  @override
+  void initState() {
+    super.initState();
+
+    if (widget.autoOpenNextLesson) {
+      final int nextLessonIndex = LessonsScreen.findNextUncompletedLessonId();
+      if (nextLessonIndex != -1) {
+        _selectedLessonIndex = nextLessonIndex;
+        _contentKey = const ValueKey(1); 
+      }
+    }
+  }
 
   void _openLesson(int index) {
     setState(() {
@@ -28,36 +116,189 @@ class _LessonsScreenState extends State<LessonsScreen> {
     });
   }
   
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Lessons'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Colors.white,
+  Widget _buildLessonBanner(BuildContext context) {
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
+
+    final completedCount = LessonsScreen.lessons.where((l) => l["isCompleted"] == true).length;
+    final totalCount = LessonsScreen.lessons.length;
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: primaryColor,
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(25)),
       ),
-      body: WaterTransitionWrapper(
-        contentKey: _contentKey,
-        onTransitionComplete: () {}, // optional
-        child: (_contentKey == const ValueKey(0))
-            ? _buildLessonList()
-            : LessonContentScreen(
-                lessonId: _selectedLessonIndex,
-                onBack: _goBack,
+      child: SafeArea(
+        bottom: false, 
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.menu_book, color: Colors.white, size: 30),
+                  SizedBox(width: 10),
+                  Text(
+                    'Water Safety Lessons',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
               ),
+              const SizedBox(height: 12),
+              Text(
+                '$completedCount out of $totalCount lessons completed!',
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Colors.white70,
+                ),
+              ),
+              const SizedBox(height: 5),
+              LinearProgressIndicator(
+                value: totalCount > 0 ? completedCount / totalCount : 0,
+                backgroundColor: Colors.white30,
+                valueColor: const AlwaysStoppedAnimation<Color>(Colors.lightGreenAccent),
+                minHeight: 8,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-    Widget _buildLessonList() {
-    return ListView.builder(
-      itemCount: lessonTitles.length,
-      itemBuilder: (context, index) {
-        return ListTile(
-          title: Text(lessonTitles[index]),
-          onTap: () => _openLesson(index),
-        );
-      },
+  Widget _buildLessonCard(int index) {
+    final lesson = LessonsScreen.lessons[index];
+    final bool isCompleted = lesson["isCompleted"];
+    final IconData lessonIcon = lesson["icon"];
+
+    return Card(
+      elevation: 4,
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      color: Colors.white, 
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+        side: isCompleted 
+            ? BorderSide(color: Colors.green.shade400, width: 2) 
+            : BorderSide.none,
+      ),
+      child: InkWell( 
+        onTap: () => _openLesson(index),
+        borderRadius: BorderRadius.circular(15),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                    Text(
+                      lesson["title"],
+                      style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  const SizedBox(width: 10), 
+                  const Spacer(),
+                  Icon(
+                    lessonIcon,
+                    color: Theme.of(context).colorScheme.primary,
+                    size: 28,
+                  ),
+                ],
+              ),
+              const Divider(height: 16, thickness: 1),
+              Text(
+                lesson["description"],
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                isCompleted ? "Completed" : "Start Lesson",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: isCompleted ? Colors.green.shade500 : Colors.blue.shade700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildScrollableLessonContent() {
+    const Color shallowWater = Color(0xFF81D4FA); 
+    const Color deepWater = Color(0xFF0D47A1); 
+    const double bannerPadding = 160.0;
+
+    return SingleChildScrollView(
+      child: Stack(
+        children: [
+          Container(
+            height: 1600.0, 
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [shallowWater, deepWater],
+                stops: [0.0, 1.0], 
+              ),
+            ),
+          ),
+          
+          Padding(
+            padding: const EdgeInsets.only(top: bannerPadding, left: 12, right: 12, bottom: 162),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: List.generate(
+                LessonsScreen.lessons.length,
+                (index) => _buildLessonCard(index),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLessonListScreen() {
+    return Stack(
+      children: [
+        _buildScrollableLessonContent(),
+        
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: _buildLessonBanner(context),
+        ),
+      ],
+    );
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.transparent, 
+      body: WaterTransitionWrapper(
+        contentKey: _contentKey,
+        onTransitionComplete: () {}, 
+        child: (_contentKey == const ValueKey(0))
+            ? _buildLessonListScreen() 
+            : LessonContentScreen( 
+                lessonId: _selectedLessonIndex,
+                onBack: _goBack,
+              ),
+      ),
     );
   }
 }

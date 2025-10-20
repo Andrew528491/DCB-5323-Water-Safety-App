@@ -10,6 +10,7 @@ class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
+  User? get currentUser => _auth.currentUser;
 
  // Sign up with email and password
 Future<UserCredential> signUpWithEmail({
@@ -115,6 +116,7 @@ Future<UserCredential> signInWithEmail({
   Future<void> _createUserDoc(User user) async {
     await _db.collection('users').doc(user.uid).set({
       'email': user.email,
+      'username': user.displayName ?? '', // empty string if none set
       'dailyStreak': 0,
       'lessonTracker': {}, // empty map
       'createdAt': FieldValue.serverTimestamp(),

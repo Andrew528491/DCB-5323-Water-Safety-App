@@ -24,7 +24,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   // --- PLACEHOLDER DATA ---
   final String _userName = "TestName";
   
-  String? _lessonInProgressId = "lesson_1"; 
+  final String? _lessonInProgressId = "lesson_1"; 
   
   late String _contextualTitleSubText;
 

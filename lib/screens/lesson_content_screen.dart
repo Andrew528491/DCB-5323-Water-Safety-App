@@ -80,7 +80,7 @@ class LessonContentScreen extends StatelessWidget {
           )
         ],
       ),
-      child: Image.asset("assets/images/" + imageName, fit: BoxFit.cover),
+      child: Image.asset("assets/images/$imageName", fit: BoxFit.cover),
     );
   }
 }

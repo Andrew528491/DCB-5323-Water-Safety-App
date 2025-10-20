@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -14,6 +15,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool isSoundMuted = false;
   bool _isSaving = false;
 
+  @override
+void initState() {
+  super.initState();
+  _loadUserProfile();
+}
+
+Future<void> _loadUserProfile() async {
+  final user = AuthService.instance.currentUser;
+  if (user == null) return;
+
+  final doc = await FirebaseFirestore.instance
+      .collection('users')
+      .doc(user.uid)
+      .get();
+
+  if (doc.exists) {
+    final data = doc.data()!;
+    _nameController.text = data['username'] ?? '';
+    setState(() {}); // refresh initials/avatar
+  }
+}
+
   // --Name Icon--
   String get _initials {
     final name = _nameController.text.trim();
@@ -25,18 +48,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   // -- Save name edits
   Future<void> _saveProfile() async {
-    setState(() => _isSaving = true);
-    await Future.delayed(const Duration(seconds: 1));  //saving
+  setState(() => _isSaving = true);
 
-    // TODO: save edits to Firebase
-
-    setState(() => _isSaving = false);
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile updated successfully!')),
-      );
-    }
+  final user = AuthService.instance.currentUser;
+  if (user != null) {
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .update({'username': _nameController.text.trim()});
   }
+
+  setState(() => _isSaving = false);
+
+  if (mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Profile updated successfully!')),
+    );
+  }
+}
 
   // --sign out logic
   Future<void> _signOut() async {

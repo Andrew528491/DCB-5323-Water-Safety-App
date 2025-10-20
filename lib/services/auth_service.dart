@@ -6,6 +6,8 @@ class AuthService {
   AuthService._();
   static final AuthService instance = AuthService._();
 
+  User? get currentUser => _auth.currentUser;
+
   Stream<User?> get authStateChanges => _auth.authStateChanges();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -115,6 +117,7 @@ Future<UserCredential> signInWithEmail({
   Future<void> _createUserDoc(User user) async {
     await _db.collection('users').doc(user.uid).set({
       'email': user.email,
+      'username': user.displayName ?? '', // empty string if none set
       'dailyStreak': 0,
       'lessonTracker': {}, // empty map
       'createdAt': FieldValue.serverTimestamp(),

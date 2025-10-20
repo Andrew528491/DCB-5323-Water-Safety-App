@@ -6,12 +6,11 @@ class AuthService {
   AuthService._();
   static final AuthService instance = AuthService._();
 
-  User? get currentUser => _auth.currentUser;
-
   Stream<User?> get authStateChanges => _auth.authStateChanges();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
+  User? get currentUser => _auth.currentUser;
 
  // Sign up with email and password
 Future<UserCredential> signUpWithEmail({

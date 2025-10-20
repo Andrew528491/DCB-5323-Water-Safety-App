@@ -10,143 +10,149 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _ProfileScreenState extends State<ProfileScreen>
+  with AutomaticKeepAliveClientMixin<ProfileScreen> {
   final TextEditingController _nameController = TextEditingController();
   bool isMusicMuted = false;
   bool isSoundMuted = false;
   bool _isSaving = false;
 
   @override
-void initState() {
-  super.initState();
-  _loadUserProfile();
-}
+  bool get wantKeepAlive => true; 
 
-Future<void> _loadUserProfile() async {
-  final user = AuthService.instance.currentUser;
-  if (user == null) return;
+  @override
+  void initState() {
+    super.initState();
+    _loadUserProfile();
+  }
 
-  final doc = await FirebaseFirestore.instance
-      .collection('users')
-      .doc(user.uid)
-      .get();
+  Future<void> _loadUserProfile() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
 
-  if (doc.exists) {
-    final data = doc.data()!;
-    _nameController.text = data['username'] ?? '';
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+
+    if (doc.exists) {
+      final data = doc.data()!;
+      _nameController.text = data['username'] ?? user.displayName ?? '';
+    } else {
+      // fallback if doc doesn't exist
+      _nameController.text = user.displayName ?? '';
+    }
+
     setState(() {}); // refresh initials/avatar
   }
-}
 
-  // --Name Icon--
   String get _initials {
     final name = _nameController.text.trim();
     if (name.isEmpty) return '';
     final parts = name.split(' ');
     if (parts.length == 1) return parts.first[0].toUpperCase();
     return (parts.first[0] + parts.last[0]).toUpperCase();
-  }  
+  }
 
-  // -- Save name edits
   Future<void> _saveProfile() async {
-  setState(() => _isSaving = true);
+    print('DEBUG: Save button pressed');
+    setState(() => _isSaving = true);
 
-  final user = AuthService.instance.currentUser;
-  if (user != null) {
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .update({'username': _nameController.text.trim()});
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      print('ERROR: currentUser is null!');
+      setState(() => _isSaving = false);
+      return;
+    }
+
+    final username = _nameController.text.trim();
+    print('DEBUG: Attempting to save username "$username" for UID ${user.uid}');
+
+    try {
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+        'username': username,
+      }, SetOptions(merge: true));
+      print('DEBUG: Firestore write succeeded.');
+    } catch (e) {
+      print('ERROR: Firestore write failed: $e');
+    }
+
+    setState(() => _isSaving = false);
   }
 
-  setState(() => _isSaving = false);
-
-  if (mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Profile updated successfully!')),
-    );
-  }
-}
-
-  // --sign out logic
   Future<void> _signOut() async {
     await AuthService.instance.signOut();
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Signed out')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Signed out')));
     }
   }
 
- Future<void> _deleteAccount() async {
-  final confirm = await showDialog<bool>(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: const Text('Delete Account'),
-      content: const Text(
-        'Are you sure you want to permanently delete your account and all associated data? '
-        'This action cannot be undone.',
+  Future<void> _deleteAccount() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Account'),
+        content: const Text(
+          'Are you sure you want to permanently delete your account and all associated data? '
+          'This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
+        ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-          onPressed: () => Navigator.pop(context, true),
-          child: const Text('Delete'),
-        ),
-      ],
-    ),
-  );
+    );
 
-  if (confirm == true) {
-    try {
-      final user = FirebaseAuth.instance.currentUser;
+    if (confirm == true) {
+      try {
+        final user = FirebaseAuth.instance.currentUser;
 
-      if (user != null) {
-        final userId = user.uid;
+        if (user != null) {
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .delete();
 
-        // 🗑 Delete Firestore user document first
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(userId)
-            .delete();
-
-        // 🧹 Delete the Firebase Auth user account
-        await user.delete();
-
-        // 🚪 Sign out after deletion (precaution)
-        await AuthService.instance.signOut();
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Account deleted')),
-        );
-        Navigator.of(context).popUntil((route) => route.isFirst); // go back to home/login
-      }
-    } on FirebaseAuthException catch (e) {
-      if (e.code == 'requires-recent-login') {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Please sign in again before deleting your account for security reasons.',
-              ),
-            ),
-          );
+          await user.delete();
+          await AuthService.instance.signOut();
         }
-      } else {
-        rethrow;
+
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Account deleted')));
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        }
+      } on FirebaseAuthException catch (e) {
+        if (e.code == 'requires-recent-login') {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Please sign in again before deleting your account for security reasons.',
+                ),
+              ),
+            );
+          }
+        } else {
+          rethrow;
+        }
       }
     }
   }
-}
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -156,47 +162,46 @@ Future<void> _loadUserProfile() async {
         foregroundColor: Colors.white,
         actions: [
           IconButton(
-            onPressed: _isSaving ? null : _saveProfile,
+            onPressed: () {
+              print('DEBUG: Save button pressed');
+              if (!_isSaving) {
+                _saveProfile();
+              }
+            },
             icon: _isSaving
-              ? const Padding(
-                  padding: EdgeInsets.all(8.0),
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 2,
-                  ),
-                )
-              : const Icon(Icons.save),
+                ? const Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Icon(Icons.save),
             tooltip: 'Save changes',
-          ),      
+          ),
         ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(24),
         children: [
           const SizedBox(height: 16),
-
-          // -- profile avatar
           Center(
             child: CircleAvatar(
               radius: 60,
               backgroundColor: theme.colorScheme.primary,
               child: _initials.isEmpty
-                ? const Icon(Icons.person, size: 50, color: Colors.white70)
-                : Text(
-                _initials,
-                style: const TextStyle(
-                  fontSize: 32,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+                  ? const Icon(Icons.person, size: 50, color: Colors.white70)
+                  : Text(
+                      _initials,
+                      style: const TextStyle(
+                        fontSize: 32,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
             ),
           ),
-              
-
           const SizedBox(height: 24),
-
-          //name
           TextField(
             controller: _nameController,
             decoration: const InputDecoration(
@@ -206,16 +211,14 @@ Future<void> _loadUserProfile() async {
             ),
             onChanged: (_) => setState(() {}),
           ),
-
           const SizedBox(height: 30),
-
           Text(
             'Audio Settings',
-            style:
-              theme.textTheme.titleMedium!.copyWith(fontWeight: FontWeight.bold),
+            style: theme.textTheme.titleMedium!.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 10),
-
           SwitchListTile(
             title: const Text('Mute Game Music'),
             value: isMusicMuted,
@@ -226,11 +229,7 @@ Future<void> _loadUserProfile() async {
             value: isSoundMuted,
             onChanged: (value) => setState(() => isSoundMuted = value),
           ),
-
           const Divider(height: 40),
-
-
-          //--sign out
           FilledButton.icon(
             onPressed: _signOut,
             icon: const Icon(Icons.logout),
@@ -240,9 +239,7 @@ Future<void> _loadUserProfile() async {
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
-          ),  
-
-          //delete account
+          ),
           FilledButton.icon(
             onPressed: _deleteAccount,
             icon: const Icon(Icons.delete_forever),
@@ -251,49 +248,10 @@ Future<void> _loadUserProfile() async {
               backgroundColor: Colors.redAccent,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 14),
-            )
+            ),
           ),
         ],
       ),
     );
-
   }
-
-/*
-  @override
-    Widget build(BuildContext context) {
-        return Scaffold(
-            appBar: AppBar(
-            title: const Text('Profile'),
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            foregroundColor: Colors.white,
-            ),
-            body: Center(
-                child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                        const Text(
-                            'Logged in!',
-                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 12),
-                        const Text(
-                            '(### temporary ###)',
-                            style: TextStyle(color: Colors.grey),
-                        ),
-                        const SizedBox(height: 24),
-                        FilledButton.icon(
-                            onPressed: () async {
-                                await AuthService.instance.signOut();
-                            },
-                            icon: const Icon(Icons.logout),
-                            label: const Text('Sign out'),
-                        ),
-                    ],
-                ),
-            ),
-        );
-    }
-
-  */  
 }

@@ -1,14 +1,15 @@
-// lib/screens/home_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:water_safety_app/widgets/homescreen_header_clipper.dart';
 import 'lessons_screen.dart';
 import 'dart:math';
-// ADDED: Firebase imports for database access and authentication
 import 'package:firebase_auth/firebase_auth.dart'; 
 import 'package:cloud_firestore/cloud_firestore.dart'; 
 
+// Main landing page. Shows user progress and daily messages
+
 class HomeScreen extends StatefulWidget {
+
+  // Recieves data about next lesson from navigation_screen
   final String nextLessonTitle;
   final IconData nextLessonIcon; 
   final VoidCallback onNavigateToLessons; 
@@ -26,11 +27,8 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   
-  // MODIFIED: Changed to a mutable, nullable String to hold the fetched username
-  String? _userName;
-  
-  final String? _lessonInProgressId = "lesson_1"; 
-  
+  String? _userName; // Holds fetched username
+    
   late String _contextualTitleSubText;
 
   final List<String> _dailyMessages = const [
@@ -44,6 +42,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   late String _dailyMessage;
 
+  // Gets lesson progress for lesson progression visual
   int get _completedCount => LessonsScreen.lessons.where((l) => l["isCompleted"] == true).length;
   int get _totalCount => LessonsScreen.lessons.length;
   double get _progressValue => _totalCount > 0 ? _completedCount / _totalCount : 0;
@@ -54,12 +53,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    // ADDED: Load username from database as soon as the screen initializes
-    _loadUsername(); 
+    _loadUsername(); // Loads user name on screen init
     
     _dailyMessage = _selectDailyMessage();
     _contextualTitleSubText = _selectContextualTitleSubText();
 
+    // Controls the waving effect of the header
     _waveController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 3), // Speed of the wave movement
@@ -74,6 +73,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     super.dispose();
   }
 
+  // Fetches the user's display name from the database
   Future<void> _loadUsername() async {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) return; 
@@ -92,24 +92,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       _userName = fetchedName; 
   }
 
-
+  // Chooses a random message from the pool. Will need to be updated
   String _selectDailyMessage() {
     final random = Random();
     return _dailyMessages[random.nextInt(_dailyMessages.length)];
   }
 
+  // Generates the subtitle on the header. May need to be updated
   String _selectContextualTitleSubText() {
-    if (_lessonInProgressId != null) {
-      return "${widget.nextLessonTitle} is next up. Click below to continue your learning!";
-    }
-    else { 
-      return "Navigate to lessons or press the start lesson button to begin your learning!";
-    }
+    return "${widget.nextLessonTitle} is next up. Click below to continue your learning!";
   }
 
+  // Builds home_screen UI
   @override
   Widget build(BuildContext context) {
-    final bool isLessonInProgress = _lessonInProgressId != null;
     final Color primaryColor = Theme.of(context).colorScheme.primary;
 
     return Scaffold(
@@ -136,8 +132,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   _buildDailyMessageCard(context, primaryColor),
                   const SizedBox(height: 40),
 
-                  if (isLessonInProgress)
-                    _buildContinueLessonCard(context, primaryColor),
+                  _buildContinueLessonCard(context, primaryColor),
                 ],
               ),
             ),
@@ -147,9 +142,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
+
+  // Builds the moving header
   Widget _buildWavyHeader(BuildContext context, Color primaryColor, double wavePhase) {
-    // MODIFIED: Safely use _userName with a fallback if it's still null while loading
-    final String displayName = _userName ?? 'Parent'; 
+    final String displayName = _userName ?? 'User'; 
     
     return ClipPath(
       clipper: WaveClipper(wavePhase: wavePhase),
@@ -192,7 +188,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-
+  // Builds the daily message card
   Widget _buildDailyMessageCard(BuildContext context, Color primaryColor) {
     return Card(
       elevation: 10,
@@ -247,6 +243,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
+  // Builds the continue lesson card
   Widget _buildContinueLessonCard(BuildContext context, Color primaryColor) {
     return Card(
       elevation: 8,

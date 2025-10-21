@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+// Displays content for safety lessons
+
 class LessonContentScreen extends StatelessWidget {
   final int lessonId;
   final VoidCallback onBack;

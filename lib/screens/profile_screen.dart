@@ -5,6 +5,8 @@ import '../services/auth_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+// Allows users to view their profile, manage settings, logout, and delete account data
+
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -15,7 +17,8 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen>
   with AutomaticKeepAliveClientMixin<ProfileScreen> {
   final TextEditingController _nameController = TextEditingController();
-  // final TextEditingController _emailController = TextEditingController();
+
+  // Placeholder variables for Sprint 1
   bool isMusicMuted = false;
   bool isSoundMuted = false;
   bool _isSaving = false;
@@ -26,9 +29,11 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   void initState() {
     super.initState();
+    // Triggers data fetch on screen load
     _loadUserProfile();
   }
 
+  // Fetching user's profile infrom from the 'users' collection in the database
   Future<void> _loadUserProfile() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -49,6 +54,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     setState(() {}); // refresh initials/avatar
   }
 
+  // Gets username initials
   String get _initials {
     final name = _nameController.text.trim();
     if (name.isEmpty) return '';
@@ -57,6 +63,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     return (parts.first[0] + parts.last[0]).toUpperCase();
   }
 
+  // Saves user profile changes
   Future<void> _saveProfile() async {
     setState(() => _isSaving = true);
 
@@ -79,6 +86,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     setState(() => _isSaving = false);
   }
 
+  // Log out functionality
   Future<void> _signOut() async {
     await AuthService.instance.signOut();
     if (mounted) {
@@ -88,6 +96,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     }
   }
 
+  // Delete account functionality
   Future<void> _deleteAccount() async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -149,6 +158,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     }
   }
 
+  // Build for profile screen UI
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -211,21 +221,6 @@ class _ProfileScreenState extends State<ProfileScreen>
             ),
             onChanged: (_) => setState(() {}),
           ),
-
-          /*
-          const SizedBox(height: 10),
-
-          
-          TextField(
-            controller: _emailController,
-            decoration: const InputDecoration(
-              labelText: 'Email',
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.mail),
-            ),
-            onChanged: (_) => setState(() {}),
-          ),
-          */
           const SizedBox(height: 30),
           Text(
             'Audio Settings',

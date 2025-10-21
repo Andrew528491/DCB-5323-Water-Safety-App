@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'water_transition_clipper.dart';
 import 'dart:math' as math;
 
+// Responsible for handling the rise/fall water animation effect on switching screens with the main navigation.
+
 class WaterTransitionWrapper extends StatefulWidget {
-  final Widget child;
-  final Key contentKey;
+  final Widget child; // New content to display
+  final Key contentKey; // Used to detect when content changes
   final VoidCallback onTransitionComplete;
 
   const WaterTransitionWrapper({
@@ -21,13 +23,13 @@ class WaterTransitionWrapper extends StatefulWidget {
 class _WaterTransitionWrapperState extends State<WaterTransitionWrapper>
     with TickerProviderStateMixin { 
   
-  late AnimationController _riseFallController;
+  late AnimationController _riseFallController; // Vertical movement
   late Animation<double> _riseFallAnimation;
 
-  late AnimationController _waveController;
+  late AnimationController _waveController; // Wave movement
   late Animation<double> _waveAnimation;
 
-  Widget? _oldChild;
+  Widget? _oldChild; // Stores old screen content during transition
 
   @override
   void initState() {
@@ -59,13 +61,15 @@ class _WaterTransitionWrapperState extends State<WaterTransitionWrapper>
   void didUpdateWidget(covariant WaterTransitionWrapper oldWidget) {
     super.didUpdateWidget(oldWidget);
     
+    // Detects screen change via provided key
     if (widget.contentKey != oldWidget.contentKey) {
       _oldChild = oldWidget.child;
-      
       _riseFallController.reset();
+
+      // Starts transition sequence
       _riseFallController.forward().then((_) {
         setState(() {
-          _oldChild = null;
+          _oldChild = null; // Remove old content once covered via the transition
         });
         widget.onTransitionComplete();
         _riseFallController.reverse();
@@ -80,6 +84,8 @@ class _WaterTransitionWrapperState extends State<WaterTransitionWrapper>
     super.dispose();
   }
 
+
+  // Uses controllers and water_clipper to render the overlay on both screens
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(

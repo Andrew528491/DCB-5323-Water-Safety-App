@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'lesson_content_screen.dart';
 import 'package:water_safety_app/widgets/water_transition_wrapper.dart';
 
+// Displays the list of safety topics and manages transitions into the lesson content
+
 final GlobalKey<_LessonsScreenState> lessonsScreenKey = GlobalKey<_LessonsScreenState>();
 
 class LessonsScreen extends StatefulWidget {
@@ -15,6 +17,7 @@ class LessonsScreen extends StatefulWidget {
   @override
   State<LessonsScreen> createState() => _LessonsScreenState();
 
+  // The list of lessons available. Currently have temp names and other info.
   static final List<Map<String, dynamic>> lessons = [
     {
       "title": "Lesson 1: TestName",
@@ -60,6 +63,7 @@ class LessonsScreen extends StatefulWidget {
     },
   ];
 
+  // Helper method to find the next lesson for the user to complete in sequence
   static String findNextUncompletedLessonTitle() {
     for (var lesson in lessons) {
       if (lesson["isCompleted"] == false) {
@@ -69,6 +73,7 @@ class LessonsScreen extends StatefulWidget {
     return "Start Your Journey"; 
   }
 
+  // Helper method to find the icon for the next lesson for the user to complete in sequence
   static IconData findNextUncompletedLessonIcon() {
     for (var lesson in lessons) {
       if (lesson["isCompleted"] == false) {
@@ -78,6 +83,7 @@ class LessonsScreen extends StatefulWidget {
     return Icons.menu_book; 
   }
 
+  // Helper method to retrieve the id of the next uncompleted lesson
   static int findNextUncompletedLessonId() {
     for (int i = 0; i < lessons.length; i++) {
       if (lessons[i]["isCompleted"] == false) {
@@ -98,7 +104,7 @@ class _LessonsScreenState extends State<LessonsScreen> {
   @override
   void initState() {
     super.initState();
-    _shouldSkipAnimation = false;
+    _shouldSkipAnimation = false; // Used by continue button on home_screen to smoothly move into lesson content
   }
   
   @override
@@ -106,6 +112,7 @@ class _LessonsScreenState extends State<LessonsScreen> {
     super.didUpdateWidget(oldWidget);
   }
 
+  // Method for continue button to open directly into lesson content
   void openNextLessonFromHome() {
     final int nextLessonIndex = LessonsScreen.findNextUncompletedLessonId();
     if (nextLessonIndex != -1) {
@@ -117,7 +124,7 @@ class _LessonsScreenState extends State<LessonsScreen> {
     }
   }
 
-
+  // Method to open lesson content from the lesson list
   void _openLesson(int index) {
     setState(() {
       _selectedLessonIndex = index;
@@ -126,6 +133,7 @@ class _LessonsScreenState extends State<LessonsScreen> {
     });
   }
 
+  // Method to switch from the lesson content screenback to the lesson list
   void _goBack() {
     setState(() {
       _currentView = 0;
@@ -133,7 +141,7 @@ class _LessonsScreenState extends State<LessonsScreen> {
     });
   }
   
-
+  // Builds the top lesson header
   Widget _buildLessonBanner(BuildContext context) {
     final theme = Theme.of(context);
     final primaryColor = theme.colorScheme.primary;
@@ -191,6 +199,7 @@ class _LessonsScreenState extends State<LessonsScreen> {
     );
   }
 
+  // Builds the individual lesson selection cards
   Widget _buildLessonCard(int index) {
     final lesson = LessonsScreen.lessons[index];
     final bool isCompleted = lesson["isCompleted"];
@@ -253,6 +262,7 @@ class _LessonsScreenState extends State<LessonsScreen> {
     );
   }
 
+  // Builds the scroll view
   Widget _buildScrollableLessonContent() {
     const Color shallowWater = Color(0xFF81D4FA); 
     const Color deepWater = Color(0xFF0D47A1); 
@@ -288,6 +298,7 @@ class _LessonsScreenState extends State<LessonsScreen> {
     );
   }
 
+  // Builds the lesson_screen UI
   Widget _buildLessonListScreen() {
     return Stack(
       children: [
@@ -303,6 +314,7 @@ class _LessonsScreenState extends State<LessonsScreen> {
     );
   }
   
+  // Manages everything to do with moving in and out of lesson content
   @override
   Widget build(BuildContext context) {
     

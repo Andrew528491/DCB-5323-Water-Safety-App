@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
 
+// Clipper for the header on the home_screen
+
 class WaveClipper extends CustomClipper<Path> {
   final double wavePhase; 
 

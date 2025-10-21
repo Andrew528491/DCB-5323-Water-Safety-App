@@ -6,6 +6,8 @@ import 'lessons_screen.dart';
 import 'profile_screen.dart';
 import 'game_screen.dart';
 
+// Main container for the app. Handles the navigation bar and custom water transition effects between screens
+
 class NavigationScreen extends StatefulWidget {
   const NavigationScreen({super.key});
 
@@ -15,11 +17,12 @@ class NavigationScreen extends StatefulWidget {
 
 class _NavigationScreenState extends State<NavigationScreen> {
   
-  Key _contentKey = const ValueKey(0); 
+  Key _contentKey = const ValueKey(0); // Used to trigger WaterTransitioWrapper
   int _selectedIndex = 0; 
   
   Key _homeScreenKey = const PageStorageKey('home_initial'); 
   
+  // Values puled from lesson_screen to display on the continue button
   final String _nextLessonTitle = LessonsScreen.findNextUncompletedLessonTitle();
   final IconData _nextLessonIcon = LessonsScreen.findNextUncompletedLessonIcon(); 
 
@@ -31,12 +34,14 @@ class _NavigationScreenState extends State<NavigationScreen> {
     });
   }
   
+  // Screens are defined and ready to be loaded via the navigation baar
   void _createScreens() {
     _screens = <Widget>[
       HomeScreen(
         key: _homeScreenKey, 
         nextLessonTitle: _nextLessonTitle, 
         nextLessonIcon: _nextLessonIcon,
+        // Used via the continue button to access the next lesson
         onNavigateToLessons: () => _onItemTapped(1, autoOpen: true),
       ),
       LessonsScreen(
@@ -56,6 +61,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
   void _onItemTapped(int index, {bool autoOpen = false}) {
     
     if (index == 0) {
+      // Refreshes homescreen to update username
       _homeScreenKey = ValueKey('home_refresh_${DateTime.now().microsecondsSinceEpoch}');
       
       _screens[0] = HomeScreen(
@@ -66,6 +72,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
       );
     }
     
+    // Used by continue button to open lesson content
     if (index == 1 && autoOpen) {
         final state = lessonsScreenKey.currentState;
         if (state != null) {
@@ -85,6 +92,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
     return Scaffold(
       body: Stack(
         children: [
+          // Custom transition wrapper to apply water rising effect
           WaterTransitionWrapper(
             contentKey: _contentKey,
             onTransitionComplete: _updateSelectedIndex,
@@ -94,6 +102,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
             ),
           ),
 
+          // Navigation bar UI
           Positioned(
             left: 0,
             right: 0,
@@ -101,6 +110,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
             child: SizedBox(
               height: 150,
               child: ClipPath(
+                // Clipper that gives concave shape
                 clipper: NavBarClipper(),
                 child: BottomNavigationBar(
                   type: BottomNavigationBarType.fixed,

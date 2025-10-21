@@ -4,6 +4,8 @@ import '../services/auth_service.dart';
 import '../widgets/google_signin_button.dart';
 import '../widgets/homescreen_header_clipper.dart';
 
+// Handles user registration and login. The authentication gateway to the app.
+
 class AuthScreen extends StatefulWidget {
     const AuthScreen({super.key});
 
@@ -18,15 +20,17 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
 
     late AnimationController _waveController;
     late Animation<double> _waveAnimation; 
-        
+
+    // UI state variables
     bool _obscure = true;
-    bool _isLogin = true;       
-    bool _working = false;
+    bool _isLogin = true; // Toggles login/signup view       
+    bool _working = false; // Disables button during API calls
 
     @override
     void initState() {
         super.initState();
         
+        // Inits the wave animation
         _waveController = AnimationController(
             vsync: this,
             duration: const Duration(seconds: 4), 
@@ -42,6 +46,10 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         super.dispose();
     }
 
+    /* SPRINT 1 GOAL: As a new user, I want to create a profile and log in, so that I can save my progress and personalize my
+       experience. 
+       
+    Handles submission for login/signup */
     Future<void> _submit() async {
         if (!_formKey.currentState!.validate()) return;
         setState(() => _working = true);
@@ -67,6 +75,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         }
     }
 
+    // Google login method
     Future<void> _google() async {
         setState(() => _working = true);
         try {
@@ -80,6 +89,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         }
     }
 
+    // Build for auth_screen UI
     @override
     Widget build(BuildContext context) {
         final theme = Theme.of(context);

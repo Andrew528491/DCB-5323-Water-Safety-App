@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "763725513957-j7jtdr8he2p9pdg7uccbhrniqoogpike.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.water_safety_app",
+            "certificate_hash": "a9c732921df50c5c5e1743517a1223442af0412e"
+          }
+        },
+        {
           "client_id": "763725513957-ehnnlm442dja74r380ar13g0b6lppsoh.apps.googleusercontent.com",
           "client_type": 3
         }

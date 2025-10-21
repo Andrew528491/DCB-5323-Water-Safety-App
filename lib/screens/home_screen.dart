@@ -1,7 +1,12 @@
+// lib/screens/home_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:water_safety_app/widgets/homescreen_header_clipper.dart';
 import 'lessons_screen.dart';
 import 'dart:math';
+// ADDED: Firebase imports for database access and authentication
+import 'package:firebase_auth/firebase_auth.dart'; 
+import 'package:cloud_firestore/cloud_firestore.dart'; 
 
 class HomeScreen extends StatefulWidget {
   final String nextLessonTitle;
@@ -21,8 +26,8 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   
-  // --- PLACEHOLDER DATA ---
-  final String _userName = "TestName";
+  // MODIFIED: Changed to a mutable, nullable String to hold the fetched username
+  String? _userName;
   
   final String? _lessonInProgressId = "lesson_1"; 
   
@@ -49,6 +54,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    // ADDED: Load username from database as soon as the screen initializes
+    _loadUsername(); 
+    
     _dailyMessage = _selectDailyMessage();
     _contextualTitleSubText = _selectContextualTitleSubText();
 
@@ -65,6 +73,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _waveController.dispose();
     super.dispose();
   }
+
+  Future<void> _loadUsername() async {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return; 
+
+      String fetchedName = user.displayName ?? 'User';
+
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      if (doc.exists) {
+        final data = doc.data()!;
+        fetchedName = data['username'] ?? user.displayName ?? 'Parent';
+      }
+      _userName = fetchedName; 
+  }
+
 
   String _selectDailyMessage() {
     final random = Random();
@@ -121,6 +148,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildWavyHeader(BuildContext context, Color primaryColor, double wavePhase) {
+    // MODIFIED: Safely use _userName with a fallback if it's still null while loading
+    final String displayName = _userName ?? 'Parent'; 
+    
     return ClipPath(
       clipper: WaveClipper(wavePhase: wavePhase),
       child: Container(
@@ -140,7 +170,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Welcome back, $_userName!",
+              "Welcome back, $displayName!",
               style: const TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.w800,

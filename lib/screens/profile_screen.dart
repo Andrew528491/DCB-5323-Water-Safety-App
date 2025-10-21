@@ -15,7 +15,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen>
   with AutomaticKeepAliveClientMixin<ProfileScreen> {
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
+  // final TextEditingController _emailController = TextEditingController();
   bool isMusicMuted = false;
   bool isSoundMuted = false;
   bool _isSaving = false;
@@ -212,9 +212,10 @@ class _ProfileScreenState extends State<ProfileScreen>
             onChanged: (_) => setState(() {}),
           ),
 
+          /*
           const SizedBox(height: 10),
 
-          //email
+          
           TextField(
             controller: _emailController,
             decoration: const InputDecoration(
@@ -224,7 +225,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             ),
             onChanged: (_) => setState(() {}),
           ),
-
+          */
           const SizedBox(height: 30),
           Text(
             'Audio Settings',

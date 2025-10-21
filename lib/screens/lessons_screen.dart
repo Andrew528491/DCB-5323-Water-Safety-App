@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'lesson_content_screen.dart';
 import 'package:water_safety_app/widgets/water_transition_wrapper.dart';
 
+final GlobalKey<_LessonsScreenState> lessonsScreenKey = GlobalKey<_LessonsScreenState>();
+
 class LessonsScreen extends StatefulWidget {
   final bool autoOpenNextLesson;
 
-  const LessonsScreen({
-    super.key,
+
+  LessonsScreen({ 
     this.autoOpenNextLesson = false,
-  });
+  }) : super(key: lessonsScreenKey);
 
   @override
   State<LessonsScreen> createState() => _LessonsScreenState();
@@ -88,34 +90,50 @@ class LessonsScreen extends StatefulWidget {
 
 class _LessonsScreenState extends State<LessonsScreen> {
   int _selectedLessonIndex = 0;
-  Key _contentKey = const ValueKey(0); 
+  
+  int _currentView = 0; 
+  
+  late bool _shouldSkipAnimation;
 
   @override
   void initState() {
     super.initState();
+    _shouldSkipAnimation = false;
+  }
+  
+  @override
+  void didUpdateWidget(covariant LessonsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+  }
 
-    if (widget.autoOpenNextLesson) {
-      final int nextLessonIndex = LessonsScreen.findNextUncompletedLessonId();
-      if (nextLessonIndex != -1) {
+  void openNextLessonFromHome() {
+    final int nextLessonIndex = LessonsScreen.findNextUncompletedLessonId();
+    if (nextLessonIndex != -1) {
+      setState(() {
         _selectedLessonIndex = nextLessonIndex;
-        _contentKey = const ValueKey(1); 
-      }
+        _currentView = 1; 
+        _shouldSkipAnimation = true; 
+      });
     }
   }
+
 
   void _openLesson(int index) {
     setState(() {
       _selectedLessonIndex = index;
-      _contentKey = const ValueKey(1);
+      _currentView = 1;
+      _shouldSkipAnimation = false; 
     });
   }
 
   void _goBack() {
     setState(() {
-      _contentKey = const ValueKey(0);
+      _currentView = 0;
+      _shouldSkipAnimation = false;
     });
   }
   
+
   Widget _buildLessonBanner(BuildContext context) {
     final theme = Theme.of(context);
     final primaryColor = theme.colorScheme.primary;
@@ -152,7 +170,7 @@ class _LessonsScreenState extends State<LessonsScreen> {
               ),
               const SizedBox(height: 12),
               Text(
-                '$completedCount out of $totalCount lessons completed!',
+                '$completedCount out of ${LessonsScreen.lessons.length} lessons completed!',
                 style: const TextStyle(
                   fontSize: 16,
                   color: Colors.white70,
@@ -287,18 +305,33 @@ class _LessonsScreenState extends State<LessonsScreen> {
   
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.transparent, 
-      body: WaterTransitionWrapper(
-        contentKey: _contentKey,
-        onTransitionComplete: () {}, 
-        child: (_contentKey == const ValueKey(0))
-            ? _buildLessonListScreen() 
-            : LessonContentScreen( 
-                lessonId: _selectedLessonIndex,
-                onBack: _goBack,
-              ),
-      ),
+    
+    Widget lessonsContent = IndexedStack(
+      index: _currentView,
+      children: [
+        _buildLessonListScreen(), 
+        LessonContentScreen( 
+          lessonId: _selectedLessonIndex,
+          onBack: _goBack,
+        ),
+      ],
+    );
+    
+    if (_shouldSkipAnimation) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_shouldSkipAnimation) {
+              setState(() {
+                _shouldSkipAnimation = false;
+              });
+        }
+      });
+      return lessonsContent; 
+    }
+
+    return WaterTransitionWrapper(
+      contentKey: ValueKey(_currentView), 
+      onTransitionComplete: () {}, 
+      child: lessonsContent,
     );
   }
 }

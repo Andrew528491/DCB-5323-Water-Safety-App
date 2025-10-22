@@ -17,6 +17,8 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen>
   with AutomaticKeepAliveClientMixin<ProfileScreen> {
   final TextEditingController _nameController = TextEditingController();
+  // TODO: Add support for the user to change email
+  final TextEditingController _emailController = TextEditingController();
 
   // Placeholder variables for Sprint 1
   bool isMusicMuted = false;
@@ -173,7 +175,6 @@ class _ProfileScreenState extends State<ProfileScreen>
           Text('Save Changes'),
           IconButton(
             onPressed: () {
-              print('DEBUG: Save button pressed');
               if (!_isSaving) {
                 _saveProfile();
               }
@@ -221,6 +222,16 @@ class _ProfileScreenState extends State<ProfileScreen>
             ),
             onChanged: (_) => setState(() {}),
           ),
+          const SizedBox(height: 5,),
+          TextField(
+            controller: _emailController,
+            decoration: const InputDecoration(
+              labelText: 'Email',
+              border: OutlineInputBorder(),
+              prefixIcon: Icon(Icons.person),
+            ),
+            onChanged: (_) => setState(() {}),
+          ),
           const SizedBox(height: 30),
           Text(
             'Audio Settings',
@@ -250,6 +261,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
           ),
+          SizedBox(height: 5),
           FilledButton.icon(
             onPressed: _deleteAccount,
             icon: const Icon(Icons.delete_forever),

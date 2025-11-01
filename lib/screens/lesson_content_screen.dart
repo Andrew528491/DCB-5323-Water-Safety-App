@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../games/riptide_escape_screen.dart';
 
 // Displays content for safety lessons
 
@@ -12,17 +13,41 @@ class LessonContentScreen extends StatelessWidget {
     required this.onBack,
   });
 
+  // Launch game and mark lesson as completed when returning
+  Future<void> _launchGameAndComplete(BuildContext context) async {
+    // Navigate to the game
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const RiptideEscapeScreen(),
+      ),
+    );
+
+    // When user returns from game, mark lesson as completed
+    lesson["isCompleted"] = true;
+    
+    // Return to lesson list
+    if (context.mounted) {
+      onBack();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final int lessonNum = lesson["lessonNumber"] ?? 0;
     final String title = lesson["title"] ?? "Untitled Lesson";
     final String description = lesson["description"] ?? "";
     final List<dynamic> content = lesson["content"] ?? [];
+    final bool isCompleted = lesson["isCompleted"] ?? false;
+    final String imageURL = lesson["imageURL"] ?? "nothing to display";
+    print(imageURL);
+    print("Lesson data: $lesson");
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F8FF), 
+      backgroundColor: const Color(0xFFF0F8FF),
       body: Column(
         children: [
+          // Fixed header with back button
           SafeArea(
             bottom: false,
             child: Container(
@@ -31,7 +56,7 @@ class LessonContentScreen extends StatelessWidget {
                 color: Theme.of(context).colorScheme.primary,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),
@@ -62,7 +87,7 @@ class LessonContentScreen extends StatelessWidget {
           // Scrollable content
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 300), // Extra bottom padding for navigation bar
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 200),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -75,6 +100,7 @@ class LessonContentScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
+                  _buildImageBlock(imageURL),
 
                   // Description
                   if (description.isNotEmpty)
@@ -84,12 +110,44 @@ class LessonContentScreen extends StatelessWidget {
                   ...content.map((item) {
                     if (item is String) {
                       return _buildTextBlock(context, item);
-                    } else if (item is Map<String, dynamic> && item["image"] != null) {
-                      return _buildImageBlock(item["image"]);
-                    } else {
-                      return const SizedBox.shrink();
                     }
+                    return const SizedBox.shrink();
                   }).toList(),
+
+                  // Complete lesson button at bottom of content
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: isCompleted 
+                          ? null 
+                          : () => _launchGameAndComplete(context),
+                      icon: Icon(
+                        isCompleted ? Icons.check_circle : Icons.videogame_asset,
+                        size: 24,
+                      ),
+                      label: Text(
+                        isCompleted ? 'Lesson Completed!' : 'Complete Lesson - Play Game',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        backgroundColor: isCompleted 
+                            ? Colors.green.shade400 
+                            : Theme.of(context).colorScheme.primary,
+                        foregroundColor: Colors.white,
+                        disabledBackgroundColor: Colors.green.shade400,
+                        disabledForegroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 4,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -99,7 +157,7 @@ class LessonContentScreen extends StatelessWidget {
     );
   }
 
-  // Text block with rounded corners and better contrast
+  // Text block
   Widget _buildTextBlock(BuildContext context, String text) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -109,13 +167,13 @@ class LessonContentScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 10,
             offset: const Offset(0, 4),
           )
         ],
         border: Border.all(
-          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
           width: 1,
         ),
       ),
@@ -131,47 +189,87 @@ class LessonContentScreen extends StatelessWidget {
     );
   }
 
-  // Image block with rounded corners
-  Widget _buildImageBlock(String imageName) {
+  // Image block
+  Widget _buildImageBlock(String imageSource) {
+    final bool isUrl = imageSource.startsWith('http://') || imageSource.startsWith('https://');
+    
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.15),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          )
-        ],
       ),
-      child: Image.asset(
-        "assets/images/$imageName",
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return Container(
-            height: 200,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.image_not_supported, size: 48, color: Colors.grey[600]),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Image not found',
-                    style: TextStyle(color: Colors.grey[600]),
+      child: isUrl
+          ? Image.network(
+              imageSource,
+              fit: BoxFit.cover,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Container(
+                  height: 200,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                ],
-              ),
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      value: loadingProgress.expectedTotalBytes != null
+                          ? loadingProgress.cumulativeBytesLoaded /
+                              loadingProgress.expectedTotalBytes!
+                          : null,
+                    ),
+                  ),
+                );
+              },
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  height: 200,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.image_not_supported, size: 48, color: Colors.grey[600]),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Failed to load image',
+                          style: TextStyle(color: Colors.grey[600]),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            )
+          : Image.asset(
+              "assets/images/$imageSource",
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  height: 200,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.image_not_supported, size: 48, color: Colors.grey[600]),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Image not found',
+                          style: TextStyle(color: Colors.grey[600]),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
             ),
-          );
-        },
-      ),
     );
   }
 }

@@ -88,6 +88,7 @@ class _LessonsScreenState extends State<LessonsScreen> {
             "description": data["description"] ?? "",
             "lessonNumber": data["lessonNumber"] ?? 0,
             "content": List<String>.from(data["content"] ?? []),
+            "imageURL": data["imageURL"],
             "isCompleted": false, // placeholder, can connect to progress later
             "icon": Icons.water,  // customize icons by lesson later
           };

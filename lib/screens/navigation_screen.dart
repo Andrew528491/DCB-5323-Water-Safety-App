@@ -17,15 +17,11 @@ class NavigationScreen extends StatefulWidget {
 
 class _NavigationScreenState extends State<NavigationScreen> {
   
-  Key _contentKey = const ValueKey(0); // Used to trigger WaterTransitioWrapper
+  Key _contentKey = const ValueKey(0); // Used to trigger WaterTransitionWrapper
   int _selectedIndex = 0; 
   
   Key _homeScreenKey = const PageStorageKey('home_initial'); 
   
-  // Values puled from lesson_screen to display on the continue button
-  final String _nextLessonTitle = LessonsScreen.findNextUncompletedLessonTitle();
-  final IconData _nextLessonIcon = LessonsScreen.findNextUncompletedLessonIcon(); 
-
   late List<Widget> _screens;
   
   void _updateSelectedIndex() {
@@ -34,13 +30,22 @@ class _NavigationScreenState extends State<NavigationScreen> {
     });
   }
   
-  // Screens are defined and ready to be loaded via the navigation baar
+  // Get current lesson info dynamically
+  String _getNextLessonTitle() {
+    return LessonsScreen.findNextUncompletedLessonTitle();
+  }
+  
+  IconData _getNextLessonIcon() {
+    return LessonsScreen.findNextUncompletedLessonIcon();
+  }
+  
+  // Screens are defined and ready to be loaded via the navigation bar
   void _createScreens() {
     _screens = <Widget>[
       HomeScreen(
         key: _homeScreenKey, 
-        nextLessonTitle: _nextLessonTitle, 
-        nextLessonIcon: _nextLessonIcon,
+        nextLessonTitle: _getNextLessonTitle(), 
+        nextLessonIcon: _getNextLessonIcon(),
         // Used via the continue button to access the next lesson
         onNavigateToLessons: () => _onItemTapped(1, autoOpen: true),
       ),
@@ -61,29 +66,54 @@ class _NavigationScreenState extends State<NavigationScreen> {
   void _onItemTapped(int index, {bool autoOpen = false}) {
     
     if (index == 0) {
-      // Refreshes homescreen to update username
       _homeScreenKey = ValueKey('home_refresh_${DateTime.now().microsecondsSinceEpoch}');
       
-      _screens[0] = HomeScreen(
-          key: _homeScreenKey, 
-          nextLessonTitle: _nextLessonTitle, 
-          nextLessonIcon: _nextLessonIcon,
-          onNavigateToLessons: () => _onItemTapped(1, autoOpen: true),
-      );
+      _createScreens();
     }
     
-    // Used by continue button to open lesson content
-    if (index == 1 && autoOpen) {
-        final state = lessonsScreenKey.currentState;
-        if (state != null) {
+    if (index == 1) {
+      _createScreens();
+      
+      // Used by continue button to open lesson content
+      if (autoOpen) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final state = lessonsScreenKey.currentState;
+          if (state != null) {
             state.openNextLessonFromHome();
-        }
+          }
+        });
+      }
     }
     
     if (index != _selectedIndex) {
       setState(() {
         _contentKey = ValueKey(index);
       });
+    } else if (index == _selectedIndex) {
+      setState(() {
+        _screens[index] = _createScreenWidget(index);
+      });
+    }
+  }
+  
+  // Helper to create individual screen widgets
+  Widget _createScreenWidget(int index) {
+    switch (index) {
+      case 0:
+        return HomeScreen(
+          key: _homeScreenKey,
+          nextLessonTitle: _getNextLessonTitle(),
+          nextLessonIcon: _getNextLessonIcon(),
+          onNavigateToLessons: () => _onItemTapped(1, autoOpen: true),
+        );
+      case 1:
+        return LessonsScreen(autoOpenNextLesson: false);
+      case 2:
+        return const GameScreen(key: PageStorageKey('game'));
+      case 3:
+        return const ProfileScreen(key: PageStorageKey('profile'));
+      default:
+        return Container();
     }
   }
 

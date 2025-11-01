@@ -9,7 +9,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class HomeScreen extends StatefulWidget {
 
-  // Recieves data about next lesson from navigation_screen
+  // Receives data about next lesson from navigation_screen
   final String nextLessonTitle;
   final IconData nextLessonIcon; 
   final VoidCallback onNavigateToLessons; 
@@ -75,8 +75,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   // Fetches the user's display name from the database
   Future<void> _loadUsername() async {
+    try {
       final user = FirebaseAuth.instance.currentUser;
-      if (user == null) return; 
+      if (user == null) {
+        setState(() {
+          _userName = 'User';
+        });
+        return;
+      }
 
       String fetchedName = user.displayName ?? 'User';
 
@@ -87,20 +93,47 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
       if (doc.exists) {
         final data = doc.data()!;
-        fetchedName = data['username'] ?? user.displayName ?? 'Parent';
+        fetchedName = data['username'] ?? user.displayName ?? 'User';
       }
-      _userName = fetchedName; 
+      
+      if (mounted) {
+        setState(() {
+          _userName = fetchedName;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading username: $e');
+      if (mounted) {
+        setState(() {
+          _userName = 'User';
+        });
+      }
+    }
   }
 
-  // Chooses a random message from the pool. Will need to be updated
+  // Chooses a random message from the pool
   String _selectDailyMessage() {
     final random = Random();
     return _dailyMessages[random.nextInt(_dailyMessages.length)];
   }
 
-  // Generates the subtitle on the header. May need to be updated
+  // Generates the subtitle on the header
   String _selectContextualTitleSubText() {
+    if (widget.nextLessonTitle == "All Lessons Complete!") {
+      return "Congratulations! You've completed all lessons. Keep practicing!";
+    }
     return "${widget.nextLessonTitle} is next up. Click below to continue your learning!";
+  }
+
+  @override
+  void didUpdateWidget(HomeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Update contextual text when next lesson changes
+    if (oldWidget.nextLessonTitle != widget.nextLessonTitle) {
+      setState(() {
+        _contextualTitleSubText = _selectContextualTitleSubText();
+      });
+    }
   }
 
   // Builds home_screen UI
@@ -145,7 +178,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   // Builds the moving header
   Widget _buildWavyHeader(BuildContext context, Color primaryColor, double wavePhase) {
-    final String displayName = _userName ?? 'User'; 
+    // Show loading indicator or actual name
+    final String displayName = (_userName ?? 'User');
     
     return ClipPath(
       clipper: WaveClipper(wavePhase: wavePhase),
@@ -245,6 +279,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   // Builds the continue lesson card
   Widget _buildContinueLessonCard(BuildContext context, Color primaryColor) {
+    final bool allComplete = widget.nextLessonTitle == "All Lessons Complete!";
+    
     return Card(
       elevation: 8,
       shadowColor: primaryColor.withAlpha(102),
@@ -255,7 +291,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         padding: const EdgeInsets.all(15),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [primaryColor, primaryColor.withAlpha(204)],
+            colors: allComplete 
+                ? [Colors.green.shade600, Colors.green.shade400]
+                : [primaryColor, primaryColor.withAlpha(204)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -264,9 +302,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [            
-            const Text(
-              "🌊 Next Lesson",
-              style: TextStyle(
+            Text(
+              allComplete ? "🏆 All Complete!" : "🌊 Next Lesson",
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: Colors.white70,
@@ -276,9 +314,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: () {
-                  widget.onNavigateToLessons();
-                },
+                onPressed: allComplete ? null : widget.onNavigateToLessons,
                 icon: Icon(widget.nextLessonIcon, size: 28),
                 label: Text(
                   widget.nextLessonTitle,
@@ -287,7 +323,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 15),
                   backgroundColor: Colors.white,
-                  foregroundColor: primaryColor,
+                  foregroundColor: allComplete ? Colors.green.shade600 : primaryColor,
+                  disabledBackgroundColor: Colors.white70,
+                  disabledForegroundColor: Colors.green.shade600,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),

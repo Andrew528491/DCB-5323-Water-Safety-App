@@ -7,6 +7,25 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 final GlobalKey<_LessonsScreenState> lessonsScreenKey = GlobalKey<_LessonsScreenState>();
 
+// Method to fetch icon
+  IconData getLessonIcon(String? iconName) {
+  print(iconName);
+  switch (iconName) {
+    case 'fence':
+      return Icons.fence;
+    case 'medical_services_outlined':
+      return Icons.medical_services_outlined;
+    case 'pool_outlined':
+      return Icons.pool_outlined;
+    case 'water':
+      return Icons.water;
+    case 'remove_red_eye':
+      return Icons.remove_red_eye;
+    default:
+      return Icons.help_outline;
+  }
+}
+
 class LessonsScreen extends StatefulWidget {
   final bool autoOpenNextLesson;
 
@@ -37,7 +56,7 @@ class LessonsScreen extends StatefulWidget {
   static IconData findNextUncompletedLessonIcon() {
     for (var lesson in lessons) {
       if (lesson["isCompleted"] == false) {
-        return lesson["icon"] as IconData;
+        return getLessonIcon(lesson["icon"]);
       }
     }
     return Icons.menu_book; 
@@ -89,8 +108,8 @@ class _LessonsScreenState extends State<LessonsScreen> {
             "lessonNumber": data["lessonNumber"] ?? 0,
             "content": List<String>.from(data["content"] ?? []),
             "imageURL": data["imageURL"],
+            "icon": data["icon"],
             "isCompleted": false, // placeholder, can connect to progress later
-            "icon": Icons.water,  // customize icons by lesson later
           };
         }).toList();
         _isLoading = false;
@@ -197,7 +216,7 @@ class _LessonsScreenState extends State<LessonsScreen> {
   Widget _buildLessonCard(int index) {
     final lesson = _lessonsFromFirebase[index];
     final bool isCompleted = lesson["isCompleted"];
-    final IconData lessonIcon = lesson["icon"];
+    final IconData lessonIcon = getLessonIcon(lesson["icon"]);
 
     return Card(
       elevation: 4,

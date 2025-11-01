@@ -40,8 +40,6 @@ class LessonContentScreen extends StatelessWidget {
     final List<dynamic> content = lesson["content"] ?? [];
     final bool isCompleted = lesson["isCompleted"] ?? false;
     final String imageURL = lesson["imageURL"] ?? "nothing to display";
-    print(imageURL);
-    print("Lesson data: $lesson");
 
     return Scaffold(
       backgroundColor: const Color(0xFFF0F8FF),

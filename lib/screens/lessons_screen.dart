@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'lesson_content_screen.dart';
 import 'package:water_safety_app/widgets/water_transition_wrapper.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 // Displays the list of safety topics and manages transitions into the lesson content
 
@@ -17,7 +18,9 @@ class LessonsScreen extends StatefulWidget {
   @override
   State<LessonsScreen> createState() => _LessonsScreenState();
 
+
   // The list of lessons available. Currently have temp names and other info.
+  /*
   static final List<Map<String, dynamic>> lessons = [
     {
       "title": "Lesson 1: TestName",
@@ -62,6 +65,8 @@ class LessonsScreen extends StatefulWidget {
       "icon": Icons.beach_access,
     },
   ];
+  */
+
 
   // Helper method to find the next lesson for the user to complete in sequence
   static String findNextUncompletedLessonTitle() {
@@ -92,6 +97,9 @@ class LessonsScreen extends StatefulWidget {
     }
     return -1;
   }
+
+  @override
+  State<LessonsScreen> createState() => _LessonsScreenState();
 }
 
 class _LessonsScreenState extends State<LessonsScreen> {
@@ -101,10 +109,43 @@ class _LessonsScreenState extends State<LessonsScreen> {
   
   late bool _shouldSkipAnimation;
 
+  //firebase var
+  List<Map<String, dynamic>> _lessonsFromFirebase = [];
+  bool _isLoading = true;
+
   @override
   void initState() {
     super.initState();
     _shouldSkipAnimation = false; // Used by continue button on home_screen to smoothly move into lesson content
+  ();
+  }
+
+  //fetch lessons from firestore
+  Future<void> _fetchLessonsFromFirebase() async {
+    try {
+      final snapshot = await FirebaseFirestore.instance
+        .collection('lessons')
+        .orderBy('lessonNumber')
+        .get();
+
+      setState(() {
+        _lessonsFromFirebase = snapshot.docs.map((doc) {
+          final data = doc.data();
+          return {
+            "title": data["title"] ?? "Untitled Lesson",
+            "description": data["description"] ?? "",
+            "lessonNumber": data["lessonNumber"] ?? 0,
+            "content": List<String>.from(data["content"] ?? []),
+            "isCompleted": false, // placeholder, can connect to progress later
+            "icon": Icons.water,  // customize icons by lesson later
+          };
+        }).toList();
+        _isLoading = false;
+      });  
+    } catch (e) {
+      print("Error loading lessons: $e");
+      setState(() => _isLoading = false);
+    }
   }
   
   @override
@@ -146,8 +187,8 @@ class _LessonsScreenState extends State<LessonsScreen> {
     final theme = Theme.of(context);
     final primaryColor = theme.colorScheme.primary;
 
-    final completedCount = LessonsScreen.lessons.where((l) => l["isCompleted"] == true).length;
-    final totalCount = LessonsScreen.lessons.length;
+    final completedCount = _lessonsFromFirebase.where((l) => l["isCompleted"] == true).length;
+    final totalCount = _lessonsFromFirebase.length;
 
     return Container(
       width: double.infinity,
@@ -178,7 +219,7 @@ class _LessonsScreenState extends State<LessonsScreen> {
               ),
               const SizedBox(height: 12),
               Text(
-                '$completedCount out of ${LessonsScreen.lessons.length} lessons completed!',
+                '$completedCount out of $totalCount lessons completed!',
                 style: const TextStyle(
                   fontSize: 16,
                   color: Colors.white70,
@@ -201,7 +242,7 @@ class _LessonsScreenState extends State<LessonsScreen> {
 
   // Builds the individual lesson selection cards
   Widget _buildLessonCard(int index) {
-    final lesson = LessonsScreen.lessons[index];
+    final lesson = _lessonsFromFirebase[index];
     final bool isCompleted = lesson["isCompleted"];
     final IconData lessonIcon = lesson["icon"];
 
@@ -288,7 +329,7 @@ class _LessonsScreenState extends State<LessonsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: List.generate(
-                LessonsScreen.lessons.length,
+               _lessonsFromFirebase.length,
                 (index) => _buildLessonCard(index),
               ),
             ),
@@ -317,13 +358,24 @@ class _LessonsScreenState extends State<LessonsScreen> {
   // Manages everything to do with moving in and out of lesson content
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_lessonsFromFirebase.isEmpty) {
+      return const Scaffold(
+        body: Center(child: Text("No lessons available.")),
+      );
+    }
     
     Widget lessonsContent = IndexedStack(
       index: _currentView,
       children: [
         _buildLessonListScreen(), 
         LessonContentScreen( 
-          lessonId: _selectedLessonIndex,
+          lessonId: _lessonsFromFirebase[_selectedLessonIndex],
           onBack: _goBack,
         ),
       ],

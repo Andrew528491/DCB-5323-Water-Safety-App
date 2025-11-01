@@ -10,7 +10,6 @@ final GlobalKey<_LessonsScreenState> lessonsScreenKey = GlobalKey<_LessonsScreen
 class LessonsScreen extends StatefulWidget {
   final bool autoOpenNextLesson;
 
-
   LessonsScreen({ 
     this.autoOpenNextLesson = false,
   }) : super(key: lessonsScreenKey);
@@ -18,55 +17,11 @@ class LessonsScreen extends StatefulWidget {
   @override
   State<LessonsScreen> createState() => _LessonsScreenState();
 
-
-  // The list of lessons available. Currently have temp names and other info.
-  /*
-  static final List<Map<String, dynamic>> lessons = [
-    {
-      "title": "Lesson 1: TestName",
-      "description": "Default description. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-      "isCompleted": true,
-      "icon": Icons.water,
-    },
-    {
-      "title": "Lesson 2: TestName",
-      "description": "Default description. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-      "isCompleted": false,
-      "icon": Icons.health_and_safety,
-    },
-    {
-      "title": "Lesson 3: TestName",
-      "description": "Default description. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-      "isCompleted": false,
-      "icon": Icons.pool,
-    },
-    {
-      "title": "Lesson 4: TestName",
-      "description": "Default description. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-      "isCompleted": false,
-      "icon": Icons.home,
-    },
-    {
-      "title": "Lesson 5: TestName",
-      "description": "Default description. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-      "isCompleted": false,
-      "icon": Icons.bathtub,
-    },
-    {
-      "title": "Lesson 6: TestName",
-      "description": "Default description. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-      "isCompleted": false,
-      "icon": Icons.waves,
-    },
-    {
-      "title": "Lesson 7: TestName",
-      "description": "Default description. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-      "isCompleted": false,
-      "icon": Icons.beach_access,
-    },
-  ];
-  */
-
+  // Static getter to access lessons from state
+  static List<Map<String, dynamic>> get lessons {
+    final state = lessonsScreenKey.currentState;
+    return state?._lessonsFromFirebase ?? [];
+  }
 
   // Helper method to find the next lesson for the user to complete in sequence
   static String findNextUncompletedLessonTitle() {
@@ -97,9 +52,6 @@ class LessonsScreen extends StatefulWidget {
     }
     return -1;
   }
-
-  @override
-  State<LessonsScreen> createState() => _LessonsScreenState();
 }
 
 class _LessonsScreenState extends State<LessonsScreen> {
@@ -117,7 +69,7 @@ class _LessonsScreenState extends State<LessonsScreen> {
   void initState() {
     super.initState();
     _shouldSkipAnimation = false; // Used by continue button on home_screen to smoothly move into lesson content
-  ();
+    _fetchLessonsFromFirebase();
   }
 
   //fetch lessons from firestore
@@ -143,7 +95,7 @@ class _LessonsScreenState extends State<LessonsScreen> {
         _isLoading = false;
       });  
     } catch (e) {
-      print("Error loading lessons: $e");
+      debugPrint("Error loading lessons: $e");
       setState(() => _isLoading = false);
     }
   }
@@ -375,7 +327,7 @@ class _LessonsScreenState extends State<LessonsScreen> {
       children: [
         _buildLessonListScreen(), 
         LessonContentScreen( 
-          lessonId: _lessonsFromFirebase[_selectedLessonIndex],
+          lesson: _lessonsFromFirebase[_selectedLessonIndex],
           onBack: _goBack,
         ),
       ],

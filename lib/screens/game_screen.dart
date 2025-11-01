@@ -10,20 +10,18 @@ class GameScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Color primaryColor = Theme.of(context).colorScheme.primary;
-    const Color shallowWater = Color(0xFF81D4FA); 
-    const Color deepWater = Color(0xFF0D47A1); 
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [shallowWater, deepWater],
+            colors: [Color.fromARGB(255, 164, 224, 252), Color.fromARGB(255, 36, 91, 173)],
           ),
         ),
             padding: const EdgeInsets.all(24.0),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 Icon(
                   Icons.videogame_asset,
@@ -63,7 +61,44 @@ class GameScreen extends StatelessWidget {
                     );
                   },
                 ),
+                
                 const SizedBox(height: 16),
+                _buildGameCard(
+                  context,
+                  title: '🚑 CPR Expert',
+                  description: 'Learn how to practice CPR by helping people out!',
+                  primaryColor: primaryColor,
+                  onTap: () {
+                    
+                    // HERE IS THE CALL FOR THE GAME
+                    /*
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CPRExpertScreen(),
+                      ),
+                    );*/
+                  },
+                ),
+                const SizedBox(height: 16),
+                _buildGameCard(
+                  context,
+                  title: '🛁 Bathtime Monitor',
+                  description: 'Keep your eyes on the tub and manage distractions/hazards!',
+                  primaryColor: primaryColor,
+                  onTap: () {
+
+                    // HERE IS THE CALL FOR THE GAME
+                    /*
+                    Navigator.push(
+\                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const BathtimeMonitorScreen(),
+                      ),
+                    );
+                    */
+                  },
+                ),
               ],
             ),
       ),

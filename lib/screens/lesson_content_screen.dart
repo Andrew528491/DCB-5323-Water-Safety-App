@@ -6,16 +6,19 @@ import '../games/riptide_escape_screen.dart';
 class LessonContentScreen extends StatelessWidget {
   final Map<String, dynamic> lesson;
   final VoidCallback onBack;
+  final VoidCallback onGamePlayed; 
+  final bool gameCompleted;
 
   const LessonContentScreen({
     super.key,
     required this.lesson,
     required this.onBack,
+    required this.onGamePlayed,
+    required this.gameCompleted,
   });
 
-  // Launch game and mark lesson as completed when returning
-  Future<void> _launchGameAndComplete(BuildContext context) async {
-    // Navigate to the game
+  // Launch the game and mark the lesson as read
+  Future<void> _launchGameAndNotify(BuildContext context) async {
     await Navigator.push(
       context,
       MaterialPageRoute(
@@ -23,12 +26,8 @@ class LessonContentScreen extends StatelessWidget {
       ),
     );
 
-    // When user returns from game, mark lesson as completed
-    lesson["isCompleted"] = true;
-    
-    // Return to lesson list
     if (context.mounted) {
-      onBack();
+      onGamePlayed();
     }
   }
 
@@ -39,13 +38,13 @@ class LessonContentScreen extends StatelessWidget {
     final String description = lesson["description"] ?? "";
     final List<dynamic> content = lesson["content"] ?? [];
     final bool isCompleted = lesson["isCompleted"] ?? false;
-    final String imageURL = lesson["imageURL"] ?? "nothing to display";
+    
+    final String? imageURL = lesson["imageURL"]; 
 
     return Scaffold(
       backgroundColor: const Color(0xFFF0F8FF),
       body: Column(
         children: [
-          // Fixed header with back button
           SafeArea(
             bottom: false,
             child: Container(
@@ -54,7 +53,7 @@ class LessonContentScreen extends StatelessWidget {
                 color: Theme.of(context).colorScheme.primary,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
+                    color: Colors.black.withOpacity(0.1),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),
@@ -85,7 +84,7 @@ class LessonContentScreen extends StatelessWidget {
           // Scrollable content
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 200),
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 200), 
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -98,13 +97,12 @@ class LessonContentScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  _buildImageBlock(imageURL),
+                  
+                  if (imageURL != null && imageURL.isNotEmpty)
+                     _buildImageBlock(imageURL),
 
-                  // Description
-                  if (description.isNotEmpty)
-                    _buildTextBlock(context, description),
+                  if (description.isNotEmpty) _buildTextBlock(context, description),
 
-                  // Firebase content
                   ...content.map((item) {
                     if (item is String) {
                       return _buildTextBlock(context, item);
@@ -112,20 +110,23 @@ class LessonContentScreen extends StatelessWidget {
                     return const SizedBox.shrink();
                   }).toList(),
 
-                  // Complete lesson button at bottom of content
                   const SizedBox(height: 24),
+
+                  // Play Game Button
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
-                      onPressed: isCompleted 
+                      onPressed: isCompleted || gameCompleted 
                           ? null 
-                          : () => _launchGameAndComplete(context),
+                          : () => _launchGameAndNotify(context),
                       icon: Icon(
-                        isCompleted ? Icons.check_circle : Icons.videogame_asset,
+                        isCompleted || gameCompleted ? Icons.check_circle : Icons.videogame_asset,
                         size: 24,
                       ),
                       label: Text(
-                        isCompleted ? 'Lesson Completed!' : 'Complete Lesson - Play Game',
+                        isCompleted 
+                          ? 'Lesson Completed!' 
+                          : (gameCompleted ? 'Game Played!' : 'Play Game'),
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -133,8 +134,8 @@ class LessonContentScreen extends StatelessWidget {
                       ),
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor: isCompleted 
-                            ? Colors.green.shade400 
+                        backgroundColor: isCompleted || gameCompleted
+                            ? Colors.green.shade400
                             : Theme.of(context).colorScheme.primary,
                         foregroundColor: Colors.white,
                         disabledBackgroundColor: Colors.green.shade400,
@@ -157,7 +158,7 @@ class LessonContentScreen extends StatelessWidget {
 
   // Text block
   Widget _buildTextBlock(BuildContext context, String text) {
-    return Container(
+     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -165,13 +166,13 @@ class LessonContentScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
+            color: Colors.black.withOpacity(0.08),
             blurRadius: 10,
             offset: const Offset(0, 4),
           )
         ],
         border: Border.all(
-          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
           width: 1,
         ),
       ),
@@ -190,7 +191,7 @@ class LessonContentScreen extends StatelessWidget {
   // Image block
   Widget _buildImageBlock(String imageSource) {
     final bool isUrl = imageSource.startsWith('http://') || imageSource.startsWith('https://');
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       clipBehavior: Clip.antiAlias,

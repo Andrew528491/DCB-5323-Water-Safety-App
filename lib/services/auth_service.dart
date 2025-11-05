@@ -114,12 +114,36 @@ Future<UserCredential> signInWithEmail({
 
   // Create Firestore doc for new user
   Future<void> _createUserDoc(User user) async {
-    await _db.collection('users').doc(user.uid).set({
+    final userRef = _db.collection('users').doc(user.uid);
+
+    // Create main user document
+    await userRef.set({
       'email': user.email,
-      'username': user.displayName ?? '', // empty string if none set
+      'username': user.displayName ?? 'User',
       'dailyStreak': 0,
-      'lessonTracker': {}, // empty map
       'createdAt': FieldValue.serverTimestamp(),
+      'riptideHighScore': -1,
     });
+
+    // Fetch all lessons
+    final lessonSnapshot = await _db.collection('lessons').get();
+    final lessonTrackerRef = userRef.collection('lessonTracker');
+
+    // Initialize lessonTracker subcollection
+    for (final doc in lessonSnapshot.docs) {
+      final data = doc.data();
+      final lessonNumber = data['lessonNumber'];
+      if (lessonNumber != null) {
+        await lessonTrackerRef.doc(lessonNumber.toString()).set({
+          'completion': false,
+          'playedGame': false,
+          'quizScore': -1,
+          'quizCompletions': 0,
+        });
+      } else {
+        print('Lesson ${doc.id} missing lessonNumber');
+      }
+    }
   }
+
 }

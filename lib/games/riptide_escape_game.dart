@@ -2,6 +2,8 @@ import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:math';
 
 // Logic for the Riptide Escape game
@@ -139,10 +141,21 @@ class RiptideEscapeGame extends FlameGame with PanDetector {
 
   // Ends the game and displays the game over overlay
 
-  void endGame() {
+  void endGame() async {
     gameOver = true;
     overlays.add(gameOverKey);
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final userRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+      final doc = await userRef.get();
+      final currentHighScore = doc.data()?['riptideHighScore'] ?? -1;
+
+    if (score > currentHighScore) {
+      await userRef.update({'riptideHighScore': score});
+    }
   }
+}
 
   // Methods to remove overlays
 

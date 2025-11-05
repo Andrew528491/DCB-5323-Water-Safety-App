@@ -13,11 +13,11 @@ class LessonContentScreen extends StatelessWidget {
     super.key,
     required this.lesson,
     required this.onBack,
-    required this.onGamePlayed,
+    required this.onGamePlayed, 
     required this.gameCompleted,
   });
 
-  // Launch the game and mark the lesson as read
+  // Launch game and mark lesson as completed when returning
   Future<void> _launchGameAndNotify(BuildContext context) async {
     await Navigator.push(
       context,
@@ -25,7 +25,6 @@ class LessonContentScreen extends StatelessWidget {
         builder: (context) => const RiptideEscapeScreen(),
       ),
     );
-
     if (context.mounted) {
       onGamePlayed();
     }
@@ -37,9 +36,9 @@ class LessonContentScreen extends StatelessWidget {
     final String title = lesson["title"] ?? "Untitled Lesson";
     final String description = lesson["description"] ?? "";
     final List<dynamic> content = lesson["content"] ?? [];
-    final bool isCompleted = lesson["isCompleted"] ?? false;
-    
-    final String? imageURL = lesson["imageURL"]; 
+    // isCompleted is used for displaying the button status
+    final bool isCompleted = lesson["isCompleted"] ?? false; 
+    final String imageURL = lesson["imageURL"] ?? ""; 
 
     return Scaffold(
       backgroundColor: const Color(0xFFF0F8FF),
@@ -53,7 +52,7 @@ class LessonContentScreen extends StatelessWidget {
                 color: Theme.of(context).colorScheme.primary,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1), 
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),
@@ -84,7 +83,7 @@ class LessonContentScreen extends StatelessWidget {
           // Scrollable content
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 200), 
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 200),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -98,11 +97,12 @@ class LessonContentScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   
-                  if (imageURL != null && imageURL.isNotEmpty)
-                     _buildImageBlock(imageURL),
+                  if (imageURL.isNotEmpty) _buildImageBlock(imageURL),
 
+                  // Description
                   if (description.isNotEmpty) _buildTextBlock(context, description),
 
+                  // Firebase content
                   ...content.map((item) {
                     if (item is String) {
                       return _buildTextBlock(context, item);
@@ -110,23 +110,22 @@ class LessonContentScreen extends StatelessWidget {
                     return const SizedBox.shrink();
                   }).toList(),
 
+                  // Complete lesson button at bottom of content
                   const SizedBox(height: 24),
-
-                  // Play Game Button
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
-                      onPressed: isCompleted || gameCompleted 
-                          ? null 
-                          : () => _launchGameAndNotify(context),
+                      onPressed: isCompleted ? null : (gameCompleted ? null : () => _launchGameAndNotify(context)),
                       icon: Icon(
-                        isCompleted || gameCompleted ? Icons.check_circle : Icons.videogame_asset,
+                        isCompleted
+                            ? Icons.check_circle
+                            : (gameCompleted ? Icons.check_circle_outline : Icons.videogame_asset),
                         size: 24,
                       ),
                       label: Text(
                         isCompleted 
                           ? 'Lesson Completed!' 
-                          : (gameCompleted ? 'Game Played!' : 'Play Game'),
+                          : (gameCompleted ? 'Game Played! Return to List for Quiz' : 'Play Game to Unlock Quiz'),
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -134,11 +133,11 @@ class LessonContentScreen extends StatelessWidget {
                       ),
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor: isCompleted || gameCompleted
+                        backgroundColor: isCompleted
                             ? Colors.green.shade400
                             : Theme.of(context).colorScheme.primary,
                         foregroundColor: Colors.white,
-                        disabledBackgroundColor: Colors.green.shade400,
+                        disabledBackgroundColor: isCompleted ? Colors.green.shade400 : Colors.grey.shade400,
                         disabledForegroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -158,7 +157,7 @@ class LessonContentScreen extends StatelessWidget {
 
   // Text block
   Widget _buildTextBlock(BuildContext context, String text) {
-     return Container(
+    return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -166,13 +165,13 @@ class LessonContentScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 10,
             offset: const Offset(0, 4),
           )
         ],
         border: Border.all(
-          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
           width: 1,
         ),
       ),

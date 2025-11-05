@@ -4,7 +4,6 @@ import 'package:water_safety_app/widgets/water_transition_wrapper.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'quiz_screen.dart'; 
-import '../games/riptide_escape_screen.dart';
 
 // Displays the list of safety topics and manages transitions into the lesson content
 
@@ -37,6 +36,7 @@ class LessonsScreen extends StatefulWidget {
 
   @override
   State<LessonsScreen> createState() => _LessonsScreenState();
+  
   static List<Map<String, dynamic>> get lessons {
     final state = lessonsScreenKey.currentState;
     return state?._lessonsFromFirebase ?? [];
@@ -72,12 +72,9 @@ class LessonsScreen extends StatefulWidget {
 
 class _LessonsScreenState extends State<LessonsScreen> {
   int _selectedLessonIndex = 0;
-
   int _currentView = 0;
-
   late bool _shouldSkipAnimation;
-
-  // firebase var
+  
   List<Map<String, dynamic>> _lessonsFromFirebase = [];
   bool _isLoading = true;
 
@@ -93,9 +90,7 @@ class _LessonsScreenState extends State<LessonsScreen> {
 
   // fetch lessons from firestore 
   Future<void> _fetchLessonsFromFirebase() async {
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() { _isLoading = true; });
 
     try {
       final snapshot = await _db
@@ -103,19 +98,19 @@ class _LessonsScreenState extends State<LessonsScreen> {
           .orderBy('lessonNumber')
           .get();
 
-      // firebase var
       final lessons = snapshot.docs.map((doc) {
         final data = doc.data();
         return {
           "id": doc.id,
           "title": data["title"] ?? "Untitled Lesson",
           "description": data["description"] ?? "",
-          "lessonNumber": data["lessonNumber"] ?? 0,
+          "lessonNumber": (data["lessonNumber"] as num?)?.toInt() ?? 0, 
           "content": List<String>.from(data["content"] ?? []),
           "imageURL": data["imageURL"],
           "icon": data["icon"],
-          "isCompleted": false, // set from user progress afterwards
+          "isCompleted": false, 
           "gameCompleted": false, 
+          "quizScore": 0,
         };
       }).toList();
 
@@ -131,7 +126,7 @@ class _LessonsScreenState extends State<LessonsScreen> {
     }
   }
 
-  // Fetch the current user's lessonTracker map and apply to lessons list
+  // Fetch the current user's lesson progress from the lessonTracker subcollection
   Future<void> _fetchUserProgress() async {
     final user = _auth.currentUser;
     if (user == null) {
@@ -139,28 +134,49 @@ class _LessonsScreenState extends State<LessonsScreen> {
         for (var l in _lessonsFromFirebase) {
           l["isCompleted"] = false;
           l["gameCompleted"] = false; 
+          l["quizScore"] = 0; 
         }
       });
       return;
     }
 
-
-    final userDoc = await _db.collection('users').doc(user.uid).get();
-    final data = userDoc.data();
-    final Map<String, dynamic> tracker = (data != null && data["lessonTracker"] is Map)
-        ? Map<String, dynamic>.from(data["lessonTracker"])
-        : {};
+    // Fetch all documents from the lessonTracker subcollection
+    final trackerSnapshot = await _db
+        .collection('users')
+        .doc(user.uid)
+        .collection('lessonTracker')
+        .get();
+        
+    final Map<String, Map<String, dynamic>> tracker = {};
+    for (var doc in trackerSnapshot.docs) {
+      tracker[doc.id] = doc.data();
+    }
 
     setState(() {
       for (var l in _lessonsFromFirebase) {
-        final String lessonId = l["id"] as String;
-        l["isCompleted"] = tracker[lessonId] == true; 
-        l["gameCompleted"] = tracker[lessonId] == true; 
+        final String lessonNumId = (l["lessonNumber"] ?? 0).toString(); // Get lessonNumber as string key
+        final progress = tracker[lessonNumId];
+
+        if (progress != null) {
+          final bool playedGame = progress['playedGame'] ?? false;
+          // quizScore is stored as -1 for unattempted, 0-100 for attempted
+          final int quizScore = progress['quizScore'] is num 
+              ? (progress['quizScore'] as num).toInt() 
+              : 0; 
+
+          // Use the stored completion status, or check for a passing score >= 70
+          l["isCompleted"] = (progress['completion'] as bool? ?? false) || (quizScore >= 70); 
+          l["gameCompleted"] = playedGame;
+          l["quizScore"] = quizScore; 
+        } else {
+            l["isCompleted"] = false;
+            l["gameCompleted"] = false;
+            l["quizScore"] = 0;
+        }
       }
     });
   }
 
-  // Method for continue button to open directly into lesson content
   void openNextLessonFromHome() {
     final int nextLessonIndex = LessonsScreen.findNextUncompletedLessonId();
     if (nextLessonIndex != -1) {
@@ -172,7 +188,6 @@ class _LessonsScreenState extends State<LessonsScreen> {
     }
   }
 
-  // Method to open lesson content from the lesson list
   void _openLesson(int index) {
     setState(() {
       _selectedLessonIndex = index;
@@ -181,7 +196,6 @@ class _LessonsScreenState extends State<LessonsScreen> {
     });
   }
 
-  // Method to switch from the lesson content screen back to the lesson list
   void _goBack() {
     setState(() {
       _currentView = 0;
@@ -190,11 +204,29 @@ class _LessonsScreenState extends State<LessonsScreen> {
   }
 
 
-  // Callback used by LessonContentScreen to mark game as played
-  void _markGameCompletedLocally(String lessonId) {
-    final lesson = _lessonsFromFirebase.firstWhere((l) => l["id"] == lessonId);
-    lesson["gameCompleted"] = true;
-    _goBack();
+  // Mark game as played in the lessonTracker subcollection
+  void _markGameCompletedLocally(int lessonNumber) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      _goBack();
+      return;
+    }
+
+    final String lessonNumId = lessonNumber.toString();
+    final progressDocRef = _db
+        .collection('users')
+        .doc(user.uid)
+        .collection('lessonTracker')
+        .doc(lessonNumId);
+    
+      await progressDocRef.set({
+            'playedGame': true,
+          }, SetOptions(merge: true)); 
+
+      final lesson = _lessonsFromFirebase.firstWhere((l) => l["lessonNumber"] == lessonNumber);
+      lesson["gameCompleted"] = true;
+      
+      _goBack();
   }
 
 
@@ -207,45 +239,84 @@ class _LessonsScreenState extends State<LessonsScreen> {
       ),
     );
 
-    if (quizResult == true && context.mounted) {
-      await _saveLessonCompletion(context, lesson);
+    // Check if a quiz was submitted
+    if (quizResult is Map<String, dynamic> && quizResult['total'] != null && quizResult['total'] > 0) {
+      final int rawScore = quizResult['score'] as int;
+      final int totalQuestions = quizResult['total'] as int;
+      final bool passed = quizResult['passed'] as bool;
+
+      // Calculate the score as a percentage 
+      final int finalScorePercentage = totalQuestions > 0 
+          ? ((rawScore / totalQuestions) * 100).round()
+          : 0;
+      
+      if (context.mounted) {
+        // Save Score and update completion status
+        await _saveLessonScore(context, lesson, finalScorePercentage, passed); 
+      }
+    }
+    
+    if (context.mounted) {
+      _goBack(); 
     }
   }
   
-  // Helper function to save lesson completion
-  Future<void> _saveLessonCompletion(BuildContext context, Map<String, dynamic> lesson) async {
+  // Helper method to save the final score to the subcollection
+  Future<void> _saveLessonScore(BuildContext context, Map<String, dynamic> lesson, int finalScore, bool passed) async {
     final user = _auth.currentUser;
-    if (user == null) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unable to save progress: user not signed in.')),
-        );
-      }
+    final int lessonNumber = lesson["lessonNumber"] as int;
+    final String lessonNumId = lessonNumber.toString();
+
+    if (user == null || lessonNumber == 0) {
       return;
     }
 
-    final lessonId = lesson["id"] as String?;
-    if (lessonId == null) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unable to save progress: lesson id missing.')),
-        );
-      }
-      return;
-    }
-
-    // Update user's lessonTracker map for this lesson to true in Firestore
-    await _db
+    final progressDocRef = _db
         .collection('users')
         .doc(user.uid)
-        .update({'lessonTracker.$lessonId': true});
+        .collection('lessonTracker')
+        .doc(lessonNumId);
 
-    // Update local state
-    lesson["isCompleted"] = true;
+
+    // Get the current progress document to check the best score and game completion
+    final lessonDoc = await progressDocRef.get();
+
+    final int currentSavedScore = lessonDoc.exists && lessonDoc['quizScore'] is num
+        ? (lessonDoc['quizScore'] as num).toInt()
+        : 0;
+
+        // Get current quiz completions count
+    final int currentCompletions = lessonDoc.exists && lessonDoc.data()?['quizCompletions'] is num
+        ? (lessonDoc.data()!['quizCompletions'] as num).toInt()
+        : 0;
+    
+    // Determine the score to save
+    final int scoreToSave = finalScore > currentSavedScore ? finalScore : currentSavedScore;
+
+    // Determine the final completion status
+    final bool finalCompletedStatus = passed || (currentSavedScore >= 70);
+
+    // Update/Set the lesson progress document in the subcollection
+    final Map<String, dynamic> updateData = {
+      'completion': finalCompletedStatus, 
+      'playedGame': true,
+      'quizScore': scoreToSave,
+    };
+
+    // Increment quizCompletions only if the user passed this time
+    if (passed) {
+      updateData['quizCompletions'] = currentCompletions + 1;
+    }
+
+    // Update/Set the lesson progress document in the subcollection
+    await progressDocRef.set(updateData, SetOptions(merge: true)); 
+
+    lesson["isCompleted"] = finalCompletedStatus; 
     lesson["gameCompleted"] = true; 
+    lesson["quizScore"] = scoreToSave; // Store the best score
+    
     setState(() {});
   }
-
 
   // Builds the top lesson header
   Widget _buildLessonBanner(BuildContext context) {
@@ -305,34 +376,40 @@ class _LessonsScreenState extends State<LessonsScreen> {
     );
   }
 
-  // Builds the individual lesson selection cards
+  // Builds the individual lesson selection cards with score display
   Widget _buildLessonCard(int index) {
     final lesson = _lessonsFromFirebase[index];
     final bool isCompleted = lesson["isCompleted"] ?? false;
     final bool gameCompleted = lesson["gameCompleted"] ?? false; 
+    final int quizScore = lesson["quizScore"] ?? 0; 
     final IconData lessonIcon = getLessonIcon(lesson["icon"]);
     
-    // Determine button text and color based on state
     String buttonText;
     IconData buttonIcon;
     Color buttonColor;
     VoidCallback? onPressed;
+    String statusText;
 
     if (isCompleted) {
-      buttonText = 'Lesson Completed!';
+      buttonText = 'Completed';
       buttonIcon = Icons.check_circle;
       buttonColor = Colors.green.shade400;
-      onPressed = null;
+      // TODO: Change this in sprint 3 to something else?
+      onPressed = () => _launchQuizAndComplete(context, lesson);
+      statusText = "Completed with $quizScore%";
     } else if (gameCompleted) {
       buttonText = 'Take Quiz';
       buttonIcon = Icons.quiz;
       buttonColor = Theme.of(context).colorScheme.primary; 
       onPressed = () => _launchQuizAndComplete(context, lesson);
+      // Show the best score if they attempted it but didn't pass
+      statusText = quizScore >= 0 ? "Best Score: $quizScore%" : "Game Played! Quiz Ready.";
     } else {
       buttonText = 'Play Game to Unlock Quiz';
       buttonIcon = Icons.lock; 
       buttonColor = Colors.grey.shade400;
       onPressed = null; 
+      statusText = "Read Lesson Content";
     }
 
 
@@ -382,8 +459,9 @@ class _LessonsScreenState extends State<LessonsScreen> {
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 10),
+                  // Show detailed status
                   Text(
-                    isCompleted ? "Completed" : "Read Lesson Content",
+                    statusText,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: isCompleted ? Colors.green.shade500 : Colors.blue.shade700,
@@ -394,7 +472,7 @@ class _LessonsScreenState extends State<LessonsScreen> {
             ),
           ),
           
-          // Bottom section is the Quiz button
+          // Bottom section is the Quiz/Game/Completion button
           const Divider(height: 0, thickness: 1),
           Padding(
             padding: const EdgeInsets.all(16.0),
@@ -414,7 +492,7 @@ class _LessonsScreenState extends State<LessonsScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   backgroundColor: buttonColor, 
                   foregroundColor: Colors.white,
-                  disabledBackgroundColor: Colors.grey.shade400, 
+                  disabledBackgroundColor: isCompleted ? Colors.green.shade400 : Colors.grey.shade400,
                   disabledForegroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -429,7 +507,6 @@ class _LessonsScreenState extends State<LessonsScreen> {
     );
   }
 
-  // Builds the scroll view with dynamic gradient background
   Widget _buildScrollableLessonContent() {
     const Color shallowWater = Color(0xFF81D4FA);
     const Color deepWater = Color(0xFF0D47A1);
@@ -442,7 +519,7 @@ class _LessonsScreenState extends State<LessonsScreen> {
             constraints: BoxConstraints(
               minHeight: constraints.maxHeight, 
             ),
-            child: Container(
+            child: Container( 
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
@@ -468,7 +545,6 @@ class _LessonsScreenState extends State<LessonsScreen> {
     );
   }
 
-  // Builds the lesson_screen UI
   Widget _buildLessonListScreen() {
     return Stack(
       children: [
@@ -482,7 +558,7 @@ class _LessonsScreenState extends State<LessonsScreen> {
       ],
     );
   }
-
+  
   // Manages everything to do with moving in and out of lesson content
   @override
   Widget build(BuildContext context) {
@@ -498,15 +574,17 @@ class _LessonsScreenState extends State<LessonsScreen> {
       );
     }
 
+    // Get the lesson number for the current selected lesson to pass to the game completion callback
+    final int selectedLessonNumber = _lessonsFromFirebase[_selectedLessonIndex]["lessonNumber"] as int;
+
     Widget lessonsContent = IndexedStack(
       index: _currentView,
       children: [
         _buildLessonListScreen(),
-        // Pass the game completion callback and state
         LessonContentScreen(
           lesson: _lessonsFromFirebase[_selectedLessonIndex],
           onBack: _goBack,
-          onGamePlayed: () => _markGameCompletedLocally(_lessonsFromFirebase[_selectedLessonIndex]["id"]),
+          onGamePlayed: () => _markGameCompletedLocally(selectedLessonNumber),
           gameCompleted: _lessonsFromFirebase[_selectedLessonIndex]["gameCompleted"] ?? false,
         ),
       ],

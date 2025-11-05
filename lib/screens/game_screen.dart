@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:water_safety_app/games/cpr_screen.dart';
 import '../games/riptide_escape_screen.dart';
 
 // Displays the list of games that a user can select from to play
@@ -71,13 +72,13 @@ class GameScreen extends StatelessWidget {
                   onTap: () {
                     
                     // HERE IS THE CALL FOR THE GAME
-                    /*
+                    
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const CPRExpertScreen(),
+                        builder: (context) => const CprScreen(),
                       ),
-                    );*/
+                    );
                   },
                 ),
                 const SizedBox(height: 16),

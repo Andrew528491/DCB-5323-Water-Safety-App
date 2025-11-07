@@ -45,23 +45,11 @@ class _CprScreenState extends State<CprScreen> {
             final CprGame cprGame = game as CprGame;
             return HowToPlayOverlay(game: cprGame);
           },
-          CprGame.roundCompleteKey: (context, game) {
-            final CprGame cprGame = game as CprGame;
-            
-            return RoundCompleteOverlay(
-              game: cprGame,
-              round: cprGame.round,
-              totalBonus: cprGame.lastRoundBonus + cprGame.lastTimeBonus,
-              timeBonus: cprGame.lastTimeBonus,
-              roundBonus: cprGame.lastRoundBonus,
-            );
-          },
           CprGame.gameOverKey: (context, game) {
             final CprGame cprGame = game as CprGame;
             return GameOverOverlay(
               game: cprGame,
               finalScore: cprGame.score,
-              finalRound: cprGame.round,
             );
           },
         },

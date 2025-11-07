@@ -19,7 +19,7 @@ class CprGame extends FlameGame with PanDetector {
 
   double score = 0; // Starting score
   int round = 1; // Starting round
-  double bonusTimer = 10; // Bonus timer length
+  int lives = 3; // Bonus timer length
   double cprSpawnTimer = 0; // Incremented to spawn cprs
   double cprSpawnInterval = 1.8; // Interval cprs are spawned
   double cprSpeed = 100; // Base speed cprs move down screen
@@ -50,6 +50,7 @@ class CprGame extends FlameGame with PanDetector {
     add(Background());
     add(Person());
     add(Guide());
+    add(InnerGuide());
     
     
     gameStarted = false;
@@ -65,14 +66,16 @@ class CprGame extends FlameGame with PanDetector {
     
     if (gameOver || showingRoundComplete || showingHowToPlay) return;
     
-    if (gameStarted){
-      bonusTimer = max(bonusTimer - dt, 0);
-    }
-    
     timer += dt;
     if (timer > timerRange) {
-      timer = 0;
-      score -= 1;
+      if (score > 0) {
+          lives--;
+        }
+        timer = 0;
+    }
+
+    if (lives == 0) {
+      endGame();
     }
   }
 
@@ -102,7 +105,7 @@ class CprGame extends FlameGame with PanDetector {
   void restartGame() {
     score = 0;
     round = 1;
-    bonusTimer = 10; 
+    lives = 3;
     gameOver = false;
     gameStarted = false;
     showingRoundComplete = false;
@@ -227,11 +230,13 @@ class Person extends SpriteAnimationComponent with HasGameReference<CprGame>, Ta
   void update(double dt) {
     if (tapped) {
       if (game.timer > .5) {
-        game.score += 1;
+        game.score++;
         game.timer = 0;
         
-      } else if (game.timer > 0.1) {
-        game.score -= 1;
+      } else if (game.timer > 0.15) {
+        if (game.score > 0) {
+          game.lives--;
+        }
         game.timer = 0;
       }
       tapped = false;
@@ -243,6 +248,8 @@ class Guide extends SpriteAnimationComponent with HasGameReference<CprGame> {
 
   Vector2 initSize = Vector2(400, 300);
   late Vector2 fullSize = initSize;
+  late Paint paint = Paint()..color = new Color.fromARGB(255, 41, 246, 99);
+  late double transparency;
   Future<void> onLoad() async {
     size = initSize;
     position = (game.size - size) / 2;
@@ -259,8 +266,6 @@ class Guide extends SpriteAnimationComponent with HasGameReference<CprGame> {
       topRight: Radius.circular(20)
     );
 
-    final paint = Paint()..color = const Color.fromARGB(255, 41, 246, 99);
-
     canvas.drawRRect(rrect, paint);
   }
 
@@ -272,5 +277,48 @@ class Guide extends SpriteAnimationComponent with HasGameReference<CprGame> {
 
     // Re-center as size changes
     position = (game.size - size) / 2;
+
+    if(game.score < 15) {
+      transparency = 255 - 255 * (game.score / 15);
+    } else {
+      transparency = 0;
+    }
+    int transparencyInt = transparency.toInt();
+    paint = Paint()..color = new Color.fromARGB(transparencyInt, 41, 246, 99);
   }
+
+  
 }
+
+class InnerGuide extends SpriteAnimationComponent with HasGameReference<CprGame> {
+  late double transparency;
+    void onLoad() {
+      size = Vector2(50, 25);
+      position = (game.size - size) / 2;
+      transparency = 255;
+    }
+
+    void render(Canvas canvas) {
+      priority = 2;
+
+      final rrect = RRect.fromRectAndCorners(
+      Rect.fromLTWH(0, 0, size.x, size.y),
+      bottomLeft: Radius.circular(5),
+      bottomRight: Radius.circular(5),
+      topLeft: Radius.circular(5),
+      topRight: Radius.circular(5)
+    );
+
+    canvas.drawRRect(rrect, paint);
+    }
+
+    void update(double dt) {
+      if(game.score < 15) {
+      transparency = 255 - 255 * (game.score / 15);
+    } else {
+      transparency = 0;
+    }
+    int transparencyInt = transparency.toInt();
+    paint = Paint()..color = new Color.fromARGB(transparencyInt, 255, 0, 0);
+    }
+  }

@@ -1,8 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ScoreUIOverlay extends StatelessWidget {
   final dynamic game;
   const ScoreUIOverlay({super.key, required this.game});
+
+    Future<int> _getHighScore() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      return doc.data()?['cprHighScore'] ?? -1;
+    }
+    return -1;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,31 +26,39 @@ class ScoreUIOverlay extends StatelessWidget {
       currentLives--;
     }
     
-    return Positioned(
-      top: 15,
-      left: 15,
-      right: 15,
-      child: Card(
-        elevation: 8,
-        shadowColor: primaryColor.withAlpha(100),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(15.0),
-            border: Border.all(color: primaryColor.withAlpha(51), width: 2),
+    return FutureBuilder<int>(
+      future: _getHighScore(),
+      builder: (context, snapshot) {
+        final highScore = snapshot.data ?? -1;
+        return Positioned(
+          top: 15,
+          left: 15,
+          right: 15,
+          child: Card(
+            elevation: 8,
+            shadowColor: primaryColor.withAlpha(100),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(15.0),
+                border: Border.all(color: primaryColor.withAlpha(51), width: 2),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildStatItem('${game.score.toInt()}', 'Score', Colors.amber.shade700),
+                  Container(width: 1, height: 40, color: Colors.grey.shade300),
+                  _buildStatItem(livesString, 'Lives', Colors.red.shade600),
+                  Container(width: 1, height: 40, color: Colors.grey.shade300),
+                  _buildStatItem(highScore == -1 ? '—' : '$highScore', 'High Score', Colors.green.shade700),
+                ],
+              ),
+            ),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildStatItem('${game.score}', 'Score', Colors.amber.shade700),
-              Container(width: 1, height: 40, color: Colors.grey.shade300),
-              _buildStatItem(livesString, 'Lives', Colors.red.shade600),
-            ],
-          ),
-        ),
-      ),
+        );
+      },
     );
   }
 

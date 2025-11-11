@@ -123,6 +123,7 @@ Future<UserCredential> signInWithEmail({
       'dailyStreak': 0,
       'createdAt': FieldValue.serverTimestamp(),
       'riptideHighScore': -1,
+      'cprHighScore': -1,
     });
 
     // Fetch all lessons

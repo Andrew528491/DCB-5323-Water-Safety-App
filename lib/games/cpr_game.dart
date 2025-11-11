@@ -18,7 +18,7 @@ class CprGame extends FlameGame with PanDetector {
   
   // Game variables
 
-  double score = 0; // Starting score
+  int score = 0; // Starting score
   int round = 1; // Starting round
   int lives = 3; // Bonus timer length
   double cprSpawnTimer = 0; // Incremented to spawn cprs

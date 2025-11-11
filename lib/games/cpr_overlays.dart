@@ -168,7 +168,7 @@ class HowToPlayOverlay extends StatelessWidget {
 
 class GameOverOverlay extends StatelessWidget {
   final dynamic game;
-  final double finalScore;
+  final int finalScore;
 
   const GameOverOverlay({
     super.key,

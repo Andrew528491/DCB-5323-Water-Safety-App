@@ -66,7 +66,7 @@ class GameScreen extends StatelessWidget {
                 const SizedBox(height: 16),
                 _buildGameCard(
                   context,
-                  title: '🚑 CPR Expert',
+                  title: '🚑 Poolside CPR',
                   description: 'Learn how to practice CPR by helping people out!',
                   primaryColor: primaryColor,
                   onTap: () {

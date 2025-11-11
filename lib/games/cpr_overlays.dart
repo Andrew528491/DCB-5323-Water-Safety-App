@@ -86,7 +86,7 @@ class HowToPlayOverlay extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('CPR EXPERT',
+              Text('POOLSIDE CPR',
                   style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: primaryColor)),
               const Divider(height: 20, thickness: 2),
               const SizedBox(height: 10),
@@ -96,7 +96,7 @@ class HowToPlayOverlay extends StatelessWidget {
               _buildInstruction( 'Controls', 'Tap the chest to give a compression. However, make sure the green box is aligned with the red box for proper timing!',
                   primaryColor.withAlpha(200)),
               const SizedBox(height: 15),
-              _buildInstruction('Hint', 'The timing for compressions is 100-120 presses per minute. You can follow the beat of songs like Stayin\' Alive to keep the pace', Colors.red.shade700),
+              _buildInstruction('Hint', 'The timing for compressions is 100-120 presses per minute. Think the beat of "Stayin\' Alive" to keep the pace', Colors.red.shade700),
                const SizedBox(height: 15),
               _buildInstruction('Note', 'Lives will not decrease until you have already tapped once. Get a feel for the rhythm, then start compressions!', Colors.red.shade700),
               const SizedBox(height: 20),

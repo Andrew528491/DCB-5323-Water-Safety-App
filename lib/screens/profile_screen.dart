@@ -15,7 +15,7 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen>
-  with AutomaticKeepAliveClientMixin<ProfileScreen> {
+    with AutomaticKeepAliveClientMixin<ProfileScreen> {
   final TextEditingController _nameController = TextEditingController();
   // TODO: Add support for the user to change email
   final TextEditingController _emailController = TextEditingController();
@@ -26,7 +26,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   bool _isSaving = false;
 
   @override
-  bool get wantKeepAlive => true; 
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -127,12 +127,18 @@ class _ProfileScreenState extends State<ProfileScreen>
         final user = FirebaseAuth.instance.currentUser;
 
         if (user != null) {
+          for (int i = 1; i <= 6; i++) {
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(user.uid)
+                .collection('lessonTracker').doc(i.toString())
+                .delete();
+          }
           await FirebaseFirestore.instance
               .collection('users')
               .doc(user.uid)
               .delete();
-
-          await user.delete();
+          await FirebaseAuth.instance.currentUser!.delete();
           await AuthService.instance.signOut();
         }
 
@@ -222,7 +228,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             ),
             onChanged: (_) => setState(() {}),
           ),
-          const SizedBox(height: 5,),
+          const SizedBox(height: 5),
           TextField(
             controller: _emailController,
             decoration: const InputDecoration(

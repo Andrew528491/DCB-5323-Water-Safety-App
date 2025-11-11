@@ -5,7 +5,6 @@ import 'package:flame/input.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'dart:math';
 
 // Logic for the Cpr game
 
@@ -229,12 +228,15 @@ class Background extends Component with HasGameReference<CprGame> {
 class PlayArea extends SpriteAnimationComponent with HasGameReference<CprGame>, TapCallbacks {
   bool tapped = false;
 
+  @override
   Future<void> onLoad() async {
     size = Vector2(300, 200);
     position = Vector2((game.size.x - size.x) / 2, (game.size.y - size.y) / 1.3);
   }
 
+  @override
   void render(Canvas canvas) {
+    super.render(canvas);
     priority = 1;
     
 
@@ -249,11 +251,15 @@ class PlayArea extends SpriteAnimationComponent with HasGameReference<CprGame>, 
     canvas.drawRRect(rrect, paint);
   }
 
+  @override
   void onTapDown(TapDownEvent event) {
       tapped = true;
     }
 
+  @override
   void update(double dt) {
+    super.update(dt);
+    
     if (tapped) {
       if (game.timer > .5) {
         game.score++;
@@ -274,13 +280,18 @@ class Guide extends SpriteAnimationComponent with HasGameReference<CprGame> {
 
   Vector2 initSize = Vector2(300, 200);
   late Vector2 fullSize = initSize;
-  late Paint paint = Paint()..color = new Color.fromARGB(255, 41, 246, 99);
+  late Paint paint = Paint()..color = Color.fromARGB(255, 41, 246, 99);
   late double transparency;
+
+  @override
   Future<void> onLoad() async {
     size = initSize;
     position = game.playArea.position + (game.playArea.size - size) / 2;
   }
+
+  @override
   void render(Canvas canvas) {
+    super.render(canvas);
     priority = 1;
     
 
@@ -295,7 +306,9 @@ class Guide extends SpriteAnimationComponent with HasGameReference<CprGame> {
     canvas.drawRRect(rrect, paint);
   }
 
+  @override
   void update(double dt) {
+    super.update(dt);
     double t = 1.0 - (game.timer / game.timerRange);
 
     // size shrinks from fullSize to 0
@@ -318,13 +331,17 @@ class Guide extends SpriteAnimationComponent with HasGameReference<CprGame> {
 
 class InnerGuide extends SpriteAnimationComponent with HasGameReference<CprGame> {
   late double transparency;
+
+    @override
     void onLoad() {
       size = Vector2(38, 18);
       position = game.playArea.position + (game.playArea.size - size) / 2;
       transparency = 255;
     }
 
+    @override
     void render(Canvas canvas) {
+      super.render(canvas);
       priority = 2;
 
       final rrect = RRect.fromRectAndCorners(
@@ -338,7 +355,10 @@ class InnerGuide extends SpriteAnimationComponent with HasGameReference<CprGame>
     canvas.drawRRect(rrect, paint);
     }
 
+    @override
     void update(double dt) {
+      super.update(dt);
+
       if(game.score < 15) {
       transparency = 255 - 255 * (game.score / 15);
     } else {
@@ -359,6 +379,7 @@ class InnerGuide extends SpriteAnimationComponent with HasGameReference<CprGame>
       return super.onLoad();
     }
 
+    @override
     void render(Canvas canvas) {
       super.render(canvas);
 

@@ -126,6 +126,10 @@ class _QuizScreenState extends State<QuizScreen> with SingleTickerProviderStateM
     }
   }
 
+  void _handleBackButton() {
+    Navigator.of(context).pop();
+  }
+
   Color _getOptionColor(int optionIndex) {
     if (!_hasAnswered) {
       return Colors.white;
@@ -197,11 +201,19 @@ class _QuizScreenState extends State<QuizScreen> with SingleTickerProviderStateM
       child: SafeArea(
         child: Column(
           children: [
-            // Progress at very top
+            // Header with back button and progress
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
                 children: [
+                  // Back button
+                  IconButton(
+                    onPressed: _handleBackButton,
+                    icon: const Icon(Icons.arrow_back, color: Colors.white, size: 28),
+                    tooltip: 'Back to Lessons',
+                  ),
+                  const SizedBox(width: 8),
+                  // Question progress
                   Text(
                     '${_currentQuestionIndex + 1}',
                     style: TextStyle(
@@ -219,6 +231,7 @@ class _QuizScreenState extends State<QuizScreen> with SingleTickerProviderStateM
                     ),
                   ),
                   const Spacer(),
+                  // Score badge
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(

@@ -391,7 +391,7 @@ class _LessonsScreenState extends State<LessonsScreen> {
     String statusText;
 
     if (isCompleted) {
-      buttonText = 'Completed';
+      buttonText = 'Completed - Take Again?';
       buttonIcon = Icons.check_circle;
       buttonColor = Colors.green.shade400;
       // TODO: Change this in sprint 3 to something else?

@@ -5,6 +5,8 @@ import 'package:flame/input.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/badge_service.dart' as badge_system;
+
 
 // Logic for the Cpr game
 
@@ -98,6 +100,11 @@ class CprGame extends FlameGame with PanDetector {
 
       if (score > currentHighScore) {
         await userRef.update({'cprHighScore': score.toInt()});
+        
+        final overlayContext = buildContext;
+        if (overlayContext != null && overlayContext.mounted) {
+          await badge_system.BadgeService.instance.checkAndAwardBadges(overlayContext);
+        }
       }
     }
   }
@@ -280,6 +287,7 @@ class Guide extends SpriteAnimationComponent with HasGameReference<CprGame> {
 
   Vector2 initSize = Vector2(300, 200);
   late Vector2 fullSize = initSize;
+  @override
   late Paint paint = Paint()..color = Color.fromARGB(255, 41, 246, 99);
   late double transparency;
 
@@ -323,7 +331,7 @@ class Guide extends SpriteAnimationComponent with HasGameReference<CprGame> {
       transparency = 0;
     }
     int transparencyInt = transparency.toInt();
-    paint = Paint()..color = new Color.fromARGB(transparencyInt, 41, 246, 99);
+    paint = Paint()..color = Color.fromARGB(transparencyInt, 41, 246, 99);
   }
 
   
@@ -365,7 +373,7 @@ class InnerGuide extends SpriteAnimationComponent with HasGameReference<CprGame>
       transparency = 0;
     }
     int transparencyInt = transparency.toInt();
-    paint = Paint()..color = new Color.fromARGB(transparencyInt, 255, 0, 0);
+    paint = Paint()..color = Color.fromARGB(transparencyInt, 255, 0, 0);
     }
   }
 

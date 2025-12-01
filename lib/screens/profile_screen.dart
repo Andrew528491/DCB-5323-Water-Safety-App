@@ -2,10 +2,11 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import '../services/badge_service.dart' as badge_system;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-// Allows users to view their profile, manage settings, logout, and delete account data
+// Allows users to view their profile, badges, logout, and delete account data
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -17,12 +18,8 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen>
     with AutomaticKeepAliveClientMixin<ProfileScreen> {
   final TextEditingController _nameController = TextEditingController();
-  // TODO: Add support for the user to change email
   final TextEditingController _emailController = TextEditingController();
 
-  // Placeholder variables for Sprint 1
-  bool isMusicMuted = false;
-  bool isSoundMuted = false;
   bool _isSaving = false;
 
   @override
@@ -31,11 +28,16 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   void initState() {
     super.initState();
-    // Triggers data fetch on screen load
     _loadUserProfile();
   }
 
-  // Fetching user's profile infrom from the 'users' collection in the database
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadUserProfile() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -49,14 +51,12 @@ class _ProfileScreenState extends State<ProfileScreen>
       final data = doc.data()!;
       _nameController.text = data['username'] ?? user.displayName ?? '';
     } else {
-      // fallback if doc doesn't exist
       _nameController.text = user.displayName ?? '';
     }
 
-    setState(() {}); // refresh initials/avatar
+    setState(() {});
   }
 
-  // Gets username initials
   String get _initials {
     final name = _nameController.text.trim();
     if (name.isEmpty) return '';
@@ -65,7 +65,6 @@ class _ProfileScreenState extends State<ProfileScreen>
     return (parts.first[0] + parts.last[0]).toUpperCase();
   }
 
-  // Saves user profile changes
   Future<void> _saveProfile() async {
     setState(() => _isSaving = true);
 
@@ -88,7 +87,6 @@ class _ProfileScreenState extends State<ProfileScreen>
     setState(() => _isSaving = false);
   }
 
-  // Log out functionality
   Future<void> _signOut() async {
     await AuthService.instance.signOut();
     if (mounted) {
@@ -98,7 +96,6 @@ class _ProfileScreenState extends State<ProfileScreen>
     }
   }
 
-  // Delete account functionality
   Future<void> _deleteAccount() async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -131,7 +128,8 @@ class _ProfileScreenState extends State<ProfileScreen>
             await FirebaseFirestore.instance
                 .collection('users')
                 .doc(user.uid)
-                .collection('lessonTracker').doc(i.toString())
+                .collection('lessonTracker')
+                .doc(i.toString())
                 .delete();
           }
           await FirebaseFirestore.instance
@@ -166,7 +164,273 @@ class _ProfileScreenState extends State<ProfileScreen>
     }
   }
 
-  // Build for profile screen UI
+  void _showBadgeDetails(badge_system.Badge badge, bool isEarned) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: isEarned
+                      ? badge.color.withValues(alpha: 0.2)
+                      : Colors.grey.withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  badge.icon,
+                  size: 64,
+                  color: isEarned ? badge.color : Colors.grey,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                badge.title,
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: isEarned ? badge.color : Colors.grey,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                badge.description,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey.shade700,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              if (!isEarned) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.orange.shade200),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.lock, size: 16, color: Colors.orange.shade700),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Not yet earned',
+                        style: TextStyle(
+                          color: Colors.orange.shade700,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              const SizedBox(height: 20),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Close'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBadgesSection() {
+    return StreamBuilder<List<String>>(
+      stream: badge_system.BadgeService.instance.getUserBadgesStream(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(32.0),
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
+        if (!snapshot.hasData) {
+          return const SizedBox.shrink();
+        }
+
+        final earnedBadgeIds = snapshot.data!;
+        
+        final earnedBadges = badge_system.BadgeService.allBadges
+            .where((b) => earnedBadgeIds.contains(b.id))
+            .toList();
+        
+        final lockedBadges = badge_system.BadgeService.allBadges
+            .where((b) => !earnedBadgeIds.contains(b.id))
+            .toList();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.military_tech,
+                    color: Theme.of(context).colorScheme.primary,
+                    size: 28,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Badges',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      '${earnedBadges.length} / ${badge_system.BadgeService.allBadges.length}',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            if (earnedBadges.isNotEmpty) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                child: Text(
+                  'Earned',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+              ),
+              SizedBox(
+                height: 130,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: earnedBadges.length,
+                  itemBuilder: (context, index) {
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: _buildBadgeItem(earnedBadges[index], true),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+            
+            if (lockedBadges.isNotEmpty) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                child: Text(
+                  'Locked',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+              ),
+              SizedBox(
+                height: 130,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: lockedBadges.length,
+                  itemBuilder: (context, index) {
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: _buildBadgeItem(lockedBadges[index], false),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildBadgeItem(badge_system.Badge badge, bool isEarned) {
+    return GestureDetector(
+      onTap: () => _showBadgeDetails(badge, isEarned),
+      child: Container(
+        width: 100,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isEarned
+              ? badge.color.withValues(alpha: 0.1)
+              : Colors.grey.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isEarned ? badge.color.withValues(alpha: 0.3) : Colors.grey.shade300,
+            width: 2,
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                Icon(
+                  badge.icon,
+                  size: 40,
+                  color: isEarned ? badge.color : Colors.grey.shade400,
+                ),
+                if (!isEarned)
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.lock,
+                      size: 20,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              badge.title,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: isEarned ? Colors.black87 : Colors.grey.shade600,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -178,7 +442,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: Colors.white,
         actions: [
-          Text('Save Changes'),
+          const Text('Save Changes'),
           IconButton(
             onPressed: () {
               if (!_isSaving) {
@@ -199,7 +463,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 180),
         children: [
           const SizedBox(height: 16),
           Center(
@@ -239,23 +503,10 @@ class _ProfileScreenState extends State<ProfileScreen>
             onChanged: (_) => setState(() {}),
           ),
           const SizedBox(height: 30),
-          Text(
-            'Audio Settings',
-            style: theme.textTheme.titleMedium!.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 10),
-          SwitchListTile(
-            title: const Text('Mute Game Music'),
-            value: isMusicMuted,
-            onChanged: (value) => setState(() => isMusicMuted = value),
-          ),
-          SwitchListTile(
-            title: const Text('Mute Sound Effects'),
-            value: isSoundMuted,
-            onChanged: (value) => setState(() => isSoundMuted = value),
-          ),
+          
+          // Badges section
+          const Divider(height: 40),
+          _buildBadgesSection(),
           const Divider(height: 40),
           FilledButton.icon(
             onPressed: _signOut,
@@ -267,7 +518,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
           ),
-          SizedBox(height: 5),
+          const SizedBox(height: 5),
           FilledButton.icon(
             onPressed: _deleteAccount,
             icon: const Icon(Icons.delete_forever),

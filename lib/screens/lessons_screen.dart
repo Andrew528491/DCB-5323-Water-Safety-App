@@ -4,6 +4,8 @@ import 'package:water_safety_app/widgets/water_transition_wrapper.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'quiz_screen.dart'; 
+import '../services/badge_service.dart' as badge_system;
+
 
 // Displays the list of safety topics and manages transitions into the lesson content
 
@@ -203,63 +205,68 @@ class _LessonsScreenState extends State<LessonsScreen> {
     });
   }
 
-
-  // Mark game as played in the lessonTracker subcollection
-  void _markGameCompletedLocally(int lessonNumber) async {
-    final user = _auth.currentUser;
-    if (user == null) {
-      _goBack();
-      return;
-    }
-
-    final String lessonNumId = lessonNumber.toString();
-    final progressDocRef = _db
-        .collection('users')
-        .doc(user.uid)
-        .collection('lessonTracker')
-        .doc(lessonNumId);
-    
-      await progressDocRef.set({
-            'playedGame': true,
-          }, SetOptions(merge: true)); 
-
-      final lesson = _lessonsFromFirebase.firstWhere((l) => l["lessonNumber"] == lessonNumber);
-      lesson["gameCompleted"] = true;
-      
-      _goBack();
-  }
-
-
   // Method to launch the quiz and then save full completion
-  Future<void> _launchQuizAndComplete(BuildContext context, Map<String, dynamic> lesson) async {
-    final quizResult = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => QuizScreen(lesson: lesson),
-      ),
-    );
+Future<void> _launchQuizAndComplete(BuildContext context, Map<String, dynamic> lesson) async {
+  final quizResult = await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => QuizScreen(lesson: lesson),
+    ),
+  );
 
-    // Check if a quiz was submitted
-    if (quizResult is Map<String, dynamic> && quizResult['total'] != null && quizResult['total'] > 0) {
-      final int rawScore = quizResult['score'] as int;
-      final int totalQuestions = quizResult['total'] as int;
-      final bool passed = quizResult['passed'] as bool;
+  // Check if a quiz was submitted
+  if (quizResult is Map<String, dynamic> && quizResult['total'] != null && quizResult['total'] > 0) {
+    final int rawScore = quizResult['score'] as int;
+    final int totalQuestions = quizResult['total'] as int;
+    final bool passed = quizResult['passed'] as bool;
 
-      // Calculate the score as a percentage 
-      final int finalScorePercentage = totalQuestions > 0 
-          ? ((rawScore / totalQuestions) * 100).round()
-          : 0;
-      
-      if (context.mounted) {
-        // Save Score and update completion status
-        await _saveLessonScore(context, lesson, finalScorePercentage, passed); 
-      }
-    }
+    // Calculate the score as a percentage 
+    final int finalScorePercentage = totalQuestions > 0 
+        ? ((rawScore / totalQuestions) * 100).round()
+        : 0;
     
     if (context.mounted) {
-      _goBack(); 
+      // Save Score and update completion status
+      await _saveLessonScore(context, lesson, finalScorePercentage, passed);
+      
+      // Check for newly earned badges (this will show popup and refresh profile automatically)
+      await badge_system.BadgeService.instance.checkAndAwardBadges(context);
     }
   }
+  
+  if (context.mounted) {
+    _goBack(); 
+  }
+}
+
+void _markGameCompletedLocally(int lessonNumber) async {
+  final user = _auth.currentUser;
+  if (user == null) {
+    _goBack();
+    return;
+  }
+
+  final String lessonNumId = lessonNumber.toString();
+  final progressDocRef = _db
+      .collection('users')
+      .doc(user.uid)
+      .collection('lessonTracker')
+      .doc(lessonNumId);
+  
+  await progressDocRef.set({
+    'playedGame': true,
+  }, SetOptions(merge: true)); 
+
+  final lesson = _lessonsFromFirebase.firstWhere((l) => l["lessonNumber"] == lessonNumber);
+  lesson["gameCompleted"] = true;
+  
+  // Check for badges after game completion
+  if (mounted) {
+    await badge_system.BadgeService.instance.checkAndAwardBadges(context);
+  }
+  
+  _goBack();
+}
   
   // Helper method to save the final score to the subcollection
   Future<void> _saveLessonScore(BuildContext context, Map<String, dynamic> lesson, int finalScore, bool passed) async {

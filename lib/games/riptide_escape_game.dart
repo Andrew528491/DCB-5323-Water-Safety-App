@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:math';
+import '../services/badge_service.dart' as badge_system;
+
 
 // Logic for the Riptide Escape game
 
@@ -153,6 +155,11 @@ class RiptideEscapeGame extends FlameGame with PanDetector {
 
     if (score > currentHighScore) {
       await userRef.update({'riptideHighScore': score});
+
+      final overlayContext = buildContext;
+      if (overlayContext != null && overlayContext.mounted) {
+        await badge_system.BadgeService.instance.checkAndAwardBadges(overlayContext);
+      }
     }
   }
 }

@@ -3,6 +3,7 @@ import 'package:flame/game.dart';
 import 'riptide_escape_game.dart';
 import 'riptide_escape_overlays.dart';
 
+
 // Initializes the game and handles exiting
 
 class RiptideEscapeScreen extends StatefulWidget {

@@ -108,7 +108,7 @@ class LessonContentScreen extends StatelessWidget {
                       return _buildTextBlock(context, item);
                     }
                     return const SizedBox.shrink();
-                  }).toList(),
+                  }),
 
                   // Complete lesson button at bottom of content
                   const SizedBox(height: 24),

@@ -141,10 +141,7 @@ Future<UserCredential> signInWithEmail({
           'quizScore': -1,
           'quizCompletions': 0,
         });
-      } else {
-        print('Lesson ${doc.id} missing lessonNumber');
-      }
+      } 
     }
   }
-
 }

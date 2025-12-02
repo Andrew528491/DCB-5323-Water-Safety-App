@@ -4,13 +4,17 @@ import 'package:water_safety_app/screens/navigation_screen.dart';
 import 'firebase_options.dart';
 import 'screens/auth_screen.dart';
 import 'services/auth_service.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  OneSignal.initialize("d901347e-c3fe-4349-9346-db07b7df3116");
+  OneSignal.Notifications.requestPermission(true);
   runApp(const MyApp());
+    
 }
 
 class MyApp extends StatelessWidget {

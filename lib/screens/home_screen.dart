@@ -119,7 +119,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   // Generates the subtitle on the header
   String _selectContextualTitleSubText() {
-    if (widget.nextLessonTitle == "All Lessons Complete!") {
+    // FIX: Check local progress instead of comparing incoming string
+    final bool allComplete = _completedCount == _totalCount && _totalCount > 0;
+    
+    if (allComplete) {
       return "Congratulations! You've completed all lessons. Keep practicing!";
     }
     return "${widget.nextLessonTitle} is next up. Click below to continue your learning!";
@@ -279,7 +282,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   // Builds the continue lesson card
   Widget _buildContinueLessonCard(BuildContext context, Color primaryColor) {
-    final bool allComplete = widget.nextLessonTitle == "All Lessons Complete!";
+    final bool allComplete = _completedCount == _totalCount && _totalCount > 0;
+    
+    final String buttonText = allComplete 
+        ? "All Lessons Complete! - Review?"
+        : widget.nextLessonTitle;
     
     return Card(
       elevation: 8,
@@ -314,18 +321,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: allComplete ? null : widget.onNavigateToLessons,
+                onPressed: widget.onNavigateToLessons,
                 icon: Icon(widget.nextLessonIcon, size: 28),
                 label: Text(
-                  widget.nextLessonTitle,
+                  buttonText,
                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 15),
                   backgroundColor: Colors.white,
                   foregroundColor: allComplete ? Colors.green.shade600 : primaryColor,
-                  disabledBackgroundColor: Colors.white70,
-                  disabledForegroundColor: Colors.green.shade600,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),

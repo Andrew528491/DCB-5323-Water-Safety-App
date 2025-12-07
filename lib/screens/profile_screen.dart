@@ -16,11 +16,17 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen>
-    with AutomaticKeepAliveClientMixin<ProfileScreen> {
+    with AutomaticKeepAliveClientMixin<ProfileScreen>, WidgetsBindingObserver {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
 
   bool _isSaving = false;
+
+  bool _allLessonsCompleted = false;
+  
+  bool _isScreenFocused = false; 
+
+  static const String _rewardCode = 'WATERSAFE24';
 
   @override
   bool get wantKeepAlive => true;
@@ -28,15 +34,32 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadUserProfile();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _nameController.dispose();
     _emailController.dispose();
     super.dispose();
   }
+  
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    
+    final isCurrentRoute = ModalRoute.of(context)?.isCurrent ?? false;
+    
+    if (isCurrentRoute && !_isScreenFocused) {
+      _isScreenFocused = true;
+      _loadUserProfile(); 
+    } else if (!isCurrentRoute) {
+      _isScreenFocused = false;
+    }
+  }
+
 
   Future<void> _loadUserProfile() async {
     final user = FirebaseAuth.instance.currentUser;
@@ -54,7 +77,12 @@ class _ProfileScreenState extends State<ProfileScreen>
       _nameController.text = user.displayName ?? '';
     }
 
-    setState(() {});
+    if (mounted) {
+      setState(() {
+        _emailController.text = user.email ?? 'No email'; 
+        _allLessonsCompleted = doc.data()?['completedLessons'] ?? false;
+      });
+    }
   }
 
   String get _initials {
@@ -162,6 +190,63 @@ class _ProfileScreenState extends State<ProfileScreen>
         }
       }
     }
+  }
+
+  void _showRewardCodeDialog() {
+    final Color primaryColor = Theme.of(context).colorScheme.primary;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text(
+            'Your Completion Reward Code',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                  const Text(
+                    'Thank you for completing all the lessons! Use this code:',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 20),
+                  Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                          color: primaryColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: primaryColor),
+                      ),
+                      child: Text(
+                          _rewardCode,
+                          style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w900,
+                              color: primaryColor,
+                              letterSpacing: 1.5,
+                          ),
+                      ),
+                  ),
+                  const SizedBox(height: 10),
+              ],
+          ),
+          actions: <Widget>[
+              TextButton(
+                  child: const Text('Close'),
+                  onPressed: () {
+                      Navigator.of(context).pop();
+                  },
+              ),
+          ],
+        );
+      },
+    );
   }
 
   void _showBadgeDetails(badge_system.Badge badge, bool isEarned) {
@@ -380,7 +465,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         decoration: BoxDecoration(
           color: isEarned
               ? badge.color.withValues(alpha: 0.1)
-              : Colors.grey.withValues(alpha: 0.1),
+              : Colors.grey.withValues(alpha: .1),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isEarned ? badge.color.withValues(alpha: 0.3) : Colors.grey.shade300,
@@ -502,10 +587,24 @@ class _ProfileScreenState extends State<ProfileScreen>
             ),
             onChanged: (_) => setState(() {}),
           ),
-          const SizedBox(height: 30),
+          const SizedBox(height: 10),
+          
+          if (_allLessonsCompleted) ...[
+            FilledButton.icon(
+              onPressed: _showRewardCodeDialog,
+              icon: const Icon(Icons.star),
+              label: const Text('View Completion Reward Code'),
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.green.shade600,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
           
           // Badges section
-          const Divider(height: 40),
+          const Divider(height: 20),
           _buildBadgesSection(),
           const Divider(height: 40),
           FilledButton.icon(

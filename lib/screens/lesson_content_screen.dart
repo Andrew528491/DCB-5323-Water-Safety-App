@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'dart:math';
 import '../games/riptide_escape_screen.dart';
+import '../games/bathtime_monitor_screen.dart';
+import '../games/cpr_screen.dart';
 
 // Displays content for safety lessons
 
@@ -19,12 +22,24 @@ class LessonContentScreen extends StatelessWidget {
 
   // Launch game and mark lesson as completed when returning
   Future<void> _launchGameAndNotify(BuildContext context) async {
+    final List<Widget> games = [
+      const RiptideEscapeScreen(),
+      const CprScreen(),
+      const BathtimeMonitorScreen(),
+    ];
+
+    // Randomly select one of the games
+    final random = Random();
+    final int randomIndex = random.nextInt(games.length);
+    final Widget selectedGame = games[randomIndex];
+    
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const RiptideEscapeScreen(),
+        builder: (context) => selectedGame, 
       ),
     );
+    
     if (context.mounted) {
       onGamePlayed();
     }

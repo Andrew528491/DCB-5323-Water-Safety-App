@@ -83,6 +83,80 @@ class _LessonsScreenState extends State<LessonsScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
+  static const String _rewardCode = 'WATERSAFE24';
+
+  void _showRewardPopup(BuildContext context) {
+      if (!mounted) return;
+      
+      final Color primaryColor = Theme.of(context).colorScheme.primary;
+
+      showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+              return AlertDialog(
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                  ),
+                  title: const Text(
+                      '🏆 Congratulations! All Lessons Completed!',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                          const Text(
+                              'You have mastered water safety. As a reward, here is your exclusive code!',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontSize: 16),
+                          ),
+                          const SizedBox(height: 20),
+                          Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                  color: primaryColor.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: primaryColor),
+                              ),
+                              child: const Text(
+                                  _rewardCode,
+                                  style: TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.w900,
+                                      color: Colors.blue,
+                                      letterSpacing: 1.5,
+                                  ),
+                              ),
+                          ),
+                          const SizedBox(height: 20),
+                          const Text(
+                              'You can view this code anytime in your Profile Screen.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontSize: 14, color: Colors.black54),
+                          ),
+                      ],
+                  ),
+                  actions: <Widget>[
+                      TextButton(
+                          child: Text(
+                              'Dismiss',
+                              style: TextStyle(
+                                  color: primaryColor,
+                                  fontWeight: FontWeight.bold,
+                              ),
+                          ),
+                          onPressed: () {
+                              Navigator.of(context).pop();
+                          },
+                      ),
+                  ],
+              );
+          },
+      );
+  }
+  // --- END REWARD POPUP LOGIC ---
+
   @override
   void initState() {
     super.initState();
@@ -270,59 +344,88 @@ void _markGameCompletedLocally(int lessonNumber) async {
   
   // Helper method to save the final score to the subcollection
   Future<void> _saveLessonScore(BuildContext context, Map<String, dynamic> lesson, int finalScore, bool passed) async {
-    final user = _auth.currentUser;
-    final int lessonNumber = lesson["lessonNumber"] as int;
-    final String lessonNumId = lessonNumber.toString();
+      final user = _auth.currentUser;
+      final int lessonNumber = lesson["lessonNumber"] as int;
+      final String lessonNumId = lessonNumber.toString();
 
-    if (user == null || lessonNumber == 0) {
-      return;
-    }
+      if (user == null || lessonNumber == 0) {
+        return;
+      }
 
-    final progressDocRef = _db
-        .collection('users')
-        .doc(user.uid)
-        .collection('lessonTracker')
-        .doc(lessonNumId);
+      final userDocRef = _db.collection('users').doc(user.uid); 
+
+      final progressDocRef = userDocRef
+          .collection('lessonTracker')
+          .doc(lessonNumId);
 
 
-    // Get the current progress document to check the best score and game completion
-    final lessonDoc = await progressDocRef.get();
+      // Get the current progress document to check the best score and game completion
+      final lessonDoc = await progressDocRef.get();
 
-    final int currentSavedScore = lessonDoc.exists && lessonDoc['quizScore'] is num
-        ? (lessonDoc['quizScore'] as num).toInt()
-        : 0;
+      final int currentSavedScore = lessonDoc.exists && lessonDoc['quizScore'] is num
+          ? (lessonDoc['quizScore'] as num).toInt()
+          : 0;
 
-        // Get current quiz completions count
-    final int currentCompletions = lessonDoc.exists && lessonDoc.data()?['quizCompletions'] is num
-        ? (lessonDoc.data()!['quizCompletions'] as num).toInt()
-        : 0;
-    
-    // Determine the score to save
-    final int scoreToSave = finalScore > currentSavedScore ? finalScore : currentSavedScore;
+      // Get current quiz completions count
+      final int currentCompletions = lessonDoc.exists && lessonDoc.data()?['quizCompletions'] is num
+          ? (lessonDoc.data()!['quizCompletions'] as num).toInt()
+          : 0;
+      
+      // Determine the score to save
+      final int scoreToSave = finalScore > currentSavedScore ? finalScore : currentSavedScore;
 
-    // Determine the final completion status
-    final bool finalCompletedStatus = passed || (currentSavedScore >= 70);
+      // Determine the final completion status
+      final bool finalCompletedStatus = passed || (currentSavedScore >= 70);
 
-    // Update/Set the lesson progress document in the subcollection
-    final Map<String, dynamic> updateData = {
-      'completion': finalCompletedStatus, 
-      'playedGame': true,
-      'quizScore': scoreToSave,
-    };
+      // Update/Set the lesson progress document in the subcollection
+      final Map<String, dynamic> updateData = {
+        'completion': finalCompletedStatus, 
+        'playedGame': true,
+        'quizScore': scoreToSave,
+      };
 
-    // Increment quizCompletions only if the user passed this time
-    if (passed) {
-      updateData['quizCompletions'] = currentCompletions + 1;
-    }
+      // Increment quizCompletions only if the user passed this time
+      if (passed) {
+        updateData['quizCompletions'] = currentCompletions + 1;
+      }
 
-    // Update/Set the lesson progress document in the subcollection
-    await progressDocRef.set(updateData, SetOptions(merge: true)); 
+      // Update/Set the lesson progress document in the subcollection
+      await progressDocRef.set(updateData, SetOptions(merge: true)); 
 
-    lesson["isCompleted"] = finalCompletedStatus; 
-    lesson["gameCompleted"] = true; 
-    lesson["quizScore"] = scoreToSave; // Store the best score
-    
-    setState(() {});
+      // Completion Check
+
+      final int totalLessons = LessonsScreen.lessons.length; 
+      
+      final completedDocsSnapshot = await userDocRef 
+          .collection('lessonTracker')
+          .where('completion', isEqualTo: true) 
+          .get();
+
+      final int completedCount = completedDocsSnapshot.docs.length; 
+      
+      if (completedCount == totalLessons) {
+          final userData = await userDocRef.get();
+          final bool hasAlreadyCompleted = userData.data()?['completedLessons'] ?? false;
+
+          if (!hasAlreadyCompleted) {
+              // 1. Update the database flag (Reward is awarded)
+              await userDocRef.update({
+                  'completedLessons': true,
+                  'reward_awarded_date': FieldValue.serverTimestamp(),
+              });
+
+              // 2. Show the popup immediately after setting the flag
+              if (context.mounted) {
+                  _showRewardPopup(context);
+              }
+          }
+      }
+
+      lesson["isCompleted"] = finalCompletedStatus; 
+      lesson["gameCompleted"] = true; 
+      lesson["quizScore"] = scoreToSave; // Store the best score
+      
+      setState(() {});
   }
 
   // Builds the top lesson header
@@ -401,7 +504,6 @@ void _markGameCompletedLocally(int lessonNumber) async {
       buttonText = 'Completed - Take Again?';
       buttonIcon = Icons.check_circle;
       buttonColor = Colors.green.shade400;
-      // TODO: Change this in sprint 3 to something else?
       onPressed = () => _launchQuizAndComplete(context, lesson);
       statusText = "Completed with $quizScore%";
     } else if (gameCompleted) {

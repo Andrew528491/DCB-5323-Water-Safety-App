@@ -120,10 +120,11 @@ Future<UserCredential> signInWithEmail({
     await userRef.set({
       'email': user.email,
       'username': user.displayName ?? 'User',
-      'dailyStreak': 0,
       'createdAt': FieldValue.serverTimestamp(),
       'riptideHighScore': -1,
       'cprHighScore': -1,
+      'tubHighScore': -1,
+      'completedLessons': false
     });
 
     // Fetch all lessons
